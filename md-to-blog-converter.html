@@ -85,12 +85,18 @@
       font-size: 14px;
       line-height: 1.6;
       font-family: inherit;
+      background: #ffffff;
     }
 
     textarea {
       min-height: 420px;
       resize: vertical;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .small-textarea {
+      min-height: 90px;
+      font-family: inherit;
     }
 
     .output-area {
@@ -178,47 +184,47 @@
 
         <div class="form-group">
           <label for="blogId">id</label>
-          <input id="blogId" value<input id="blog100001">
+          <input id="blogId" value="blog100001">
         </div>
 
         <div class="form-group">
           <label for="blogTitle">title</label>
-          <input id="blogTitle" value="第1章 情報セキュリティって何？なぜ私たちに必要なのか">
+          <input id="blogTitle" value="">
         </div>
 
         <div class="form-group">
           <label for="blogDescription">description</label>
-          <textarea id="blogDescription" style="min-height: 90px;">情報セキュリティの基本を初心者向けに解説。機密性・完全性・可用性の3要素や、フィッシング詐欺、SNS乗っ取りなど身近な脅威について学びます。</textarea>
+          <textarea id="blogDescription" class="small-textarea"></textarea>
         </div>
 
         <div class="form-group">
           <label for="blogOgDescription">OGP用の短い説明</label>
-          <input id="blogOgDescription" value="初心者向けに情報セキュリティの基本を解説します。">
+          <input id="blogOgDescription" value="">
         </div>
 
         <div class="form-group">
           <label for="blogHeroLead">記事上部のリード文</label>
-          <textarea id="blogHeroLead" style="min-height: 90px;">情報セキュリティの基本を初心者向けに解説。身近な被害例から、今日からできる基本対策まで分かりやすく紹介します。</textarea>
+          <textarea id="blogHeroLead" class="small-textarea"></textarea>
         </div>
 
         <div class="form-group">
           <label for="blogCategory">category</label>
-          <input id="blogCategory" value="セキュリティリテラシ">
+          <input id="blogCategory" value="">
         </div>
 
         <div class="form-group">
           <label for="blogDate">date</label>
-          <input id="blogDate" type="date" value="2026-06-15">
+          <input id="blogDate" type="date">
         </div>
 
         <div class="form-group">
           <label for="readingTime">readingTime</label>
-          <input id="readingTime" value="約8分">
+          <input id="readingTime" value="">
         </div>
 
         <div class="form-group">
           <label for="blogFile">file</label>
-          <input id="blogFile" value="blog10001-security-what-is.html">
+          <input id="blogFile" value="">
         </div>
 
         <div class="form-group">
@@ -228,17 +234,17 @@
 
         <div class="form-group">
           <label for="breadcrumbTitle">パンくず用タイトル</label>
-          <input id="breadcrumbTitle" value="第1章 情報セキュリティって何？">
+          <input id="breadcrumbTitle" value="">
         </div>
 
         <div class="form-group">
           <label for="nextTitle">次の記事タイトル</label>
-          <input id="nextTitle" value="第2章 あなたの情報はどこにある？">
+          <input id="nextTitle" value="">
         </div>
 
         <div class="form-group">
           <label for="nextFile">次の記事ファイル</label>
-          <input id="nextFile" value="blog10002-personal-information.html">
+          <input id="nextFile" value="">
         </div>
 
         <div class="form-group">
@@ -247,12 +253,14 @@
         </div>
 
         <div class="buttons">
+          <button id="autoFillBtn" class="light">記事設定を自動入力</button>
           <button id="convertBtn">変換する</button>
           <button id="sampleBtn" class="light">サンプルを入れる</button>
+          <button id="clearBtn" class="light">クリア</button>
         </div>
 
         <p class="hint">
-          ※ idはJSONとHTMLのdata属性に使います。file名と合わせるなら「blog10001」のように統一するのがおすすめです。
+          Markdownを貼り付けると、タイトル・説明文・カテゴリ・読了時間・次の記事タイトルなどを自動入力します。
         </p>
       </section>
 
@@ -260,7 +268,7 @@
 
         <section class="panel">
           <h2>Markdown入力</h2>
-          <textarea id="mdInput"></textarea>
+          <textarea id="mdInput" placeholder="# 第1章 情報セキュリティって何？なぜ私たちに必要なのか"></textarea>
         </section>
 
         <section class="panel">
@@ -315,14 +323,40 @@
     const jsonOutput = document.getElementById("jsonOutput");
     const previewFrame = document.getElementById("previewFrame");
 
+    document.getElementById("autoFillBtn").addEventListener("click", () => {
+      autoFillArticleSettings(true);
+      convert();
+    });
+
     document.getElementById("convertBtn").addEventListener("click", convert);
     document.getElementById("sampleBtn").addEventListener("click", insertSample);
+    document.getElementById("clearBtn").addEventListener("click", clearAll);
 
-    document.getElementById("copyHtmlBtn").addEventListener("click", () => copyText(htmlOutput.textContent, "HTMLをコピーしました。"));
-    document.getElementById("copyJsonBtn").addEventListener("click", () => copyText(jsonOutput.textContent, "JSONをコピーしました。"));
+    document.getElementById("copyHtmlBtn").addEventListener("click", () => {
+      copyText(htmlOutput.textContent, "HTMLをコピーしました。");
+    });
+
+    document.getElementById("copyJsonBtn").addEventListener("click", () => {
+      copyText(jsonOutput.textContent, "JSONをコピーしました。");
+    });
 
     document.getElementById("downloadHtmlBtn").addEventListener("click", downloadHtml);
     document.getElementById("downloadJsonBtn").addEventListener("click", downloadJson);
+
+    let autoFillTimer = null;
+
+    mdInput.addEventListener("input", () => {
+      clearTimeout(autoFillTimer);
+
+      autoFillTimer = setTimeout(() => {
+        autoFillArticleSettings(true);
+        convert();
+      }, 500);
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      fields.blogDate.value = getTodayDate();
+    });
 
     function insertSample() {
       mdInput.value = `# 第1章 情報セキュリティって何？なぜ私たちに必要なのか
@@ -436,6 +470,114 @@ SNSアカウントが乗っ取られるかもしれません。
 
 ---
 
+## なぜ情報セキュリティが必要なのか
+
+昔は情報の多くが紙で管理されていました。
+
+しかし現在は、
+
+* スマートフォン
+* クラウドサービス
+* SNS
+* オンライン決済
+
+などが普及し、私たちの生活はインターネットと密接につながっています。
+
+便利になった一方で、犯罪者もインターネットを利用するようになりました。
+
+そのため、
+
+「自分の情報を守る」
+
+という意識がこれまで以上に重要になっています。
+
+---
+
+## 実際に起きている被害
+
+情報セキュリティの問題はニュースの中だけの話ではありません。
+
+身近なところでも数多く発生しています。
+
+### フィッシング詐欺
+
+宅配業者や銀行を装ったメールが届きます。
+
+利用者が偽サイトにアクセスし、IDやパスワードを入力してしまうことで情報が盗まれます。
+
+---
+
+### SNSアカウントの乗っ取り
+
+同じパスワードを使い回していると、別のサービスから流出した情報を利用されることがあります。
+
+乗っ取られたアカウントから詐欺メッセージが送信されるケースもあります。
+
+---
+
+### クレジットカードの不正利用
+
+カード情報が漏えいすると、知らないうちに高額な買い物をされる場合があります。
+
+利用明細を見て初めて気付くケースも少なくありません。
+
+---
+
+### ランサムウェア
+
+パソコンのデータが暗号化され、
+
+「元に戻したければお金を払え」
+
+と要求される攻撃です。
+
+近年は企業だけでなく、個人も被害に遭う可能性があります。
+
+---
+
+## 「自分は大丈夫」が一番危険
+
+多くの被害者は、
+
+「まさか自分が狙われるとは思わなかった」
+
+と言います。
+
+しかし犯罪者は特定の人を狙うだけではありません。
+
+大量のメールを送信し、引っかかった人を攻撃します。
+
+つまり、
+
+* 有名人ではない
+* お金持ちではない
+* ITに詳しくない
+
+という理由では守られません。
+
+むしろ知識が少ない人ほど狙われやすい傾向があります。
+
+---
+
+## 情報セキュリティは難しいものではない
+
+情報セキュリティというと専門的で難しく感じるかもしれません。
+
+しかし最初から高度な知識は必要ありません。
+
+例えば、
+
+* パスワードを使い回さない
+* 怪しいメールを開かない
+* ソフトウェアを更新する
+* 不審なサイトを利用しない
+
+といった基本的な対策だけでも、多くの被害を防ぐことができます。
+
+大切なのは完璧を目指すことではなく、正しい知識を少しずつ身につけることです。
+
+---
+
 ## まとめ
 
 今回は情報セキュリティの基本について解説しました。
@@ -445,6 +587,9 @@ SNSアカウントが乗っ取られるかもしれません。
 * 情報セキュリティとは大切な情報を守ること
 * 機密性・完全性・可用性の3つが基本
 * インターネット利用者全員に関係がある
+* フィッシング詐欺やアカウント乗っ取りは身近な脅威
+* 「自分は大丈夫」という考えが危険
+* 基本的な対策だけでも被害を大きく減らせる
 
 次回は、
 
@@ -452,16 +597,41 @@ SNSアカウントが乗っ取られるかもしれません。
 
 をテーマに、私たちが普段どのような情報を扱っているのかを解説します。`;
 
+      autoFillArticleSettings(true);
       convert();
     }
 
-    function convert() {
-      const parsedMarkdown = parseMarkdown(mdInput.value);
+    function clearAll() {
+      mdInput.value = "";
+      htmlOutput.textContent = "";
+      jsonOutput.textContent = "";
+      previewFrame.srcdoc = "";
 
-      if (!fields.blogTitle.value.trim() && parsedMarkdown.title) {
-        fields.blogTitle.value = parsedMarkdown.title;
+      fields.blogId.value = "blog100001";
+      fields.blogTitle.value = "";
+      fields.blogDescription.value = "";
+      fields.blogOgDescription.value = "";
+      fields.blogHeroLead.value = "";
+      fields.blogCategory.value = "";
+      fields.blogDate.value = getTodayDate();
+      fields.readingTime.value = "";
+      fields.blogFile.value = "";
+      fields.ogImage.value = "https://www.zerquor.com/images/blog/security-basic.png";
+      fields.breadcrumbTitle.value = "";
+      fields.nextTitle.value = "";
+      fields.nextFile.value = "";
+      fields.assetVersion.value = "20260616-10";
+    }
+
+    function convert() {
+      const markdown = mdInput.value.trim();
+
+      if (!markdown) {
+        alert("Markdownを入力してください。");
+        return;
       }
 
+      const parsedMarkdown = parseMarkdown(markdown);
       const meta = getMeta();
 
       const bodyHtml = convertMarkdownBodyToArticleSections(parsedMarkdown.body);
@@ -475,21 +645,77 @@ SNSアカウントが乗っ取られるかもしれません。
 
     function getMeta() {
       return {
-        id: fields.blogId.value.trim(),
+        id: fields.blogId.value.trim() || "blog100001",
         title: fields.blogTitle.value.trim(),
         description: fields.blogDescription.value.trim(),
         ogDescription: fields.blogOgDescription.value.trim(),
         heroLead: fields.blogHeroLead.value.trim(),
-        category: fields.blogCategory.value.trim(),
-        date: fields.blogDate.value.trim(),
-        readingTime: fields.readingTime.value.trim(),
+        category: fields.blogCategory.value.trim() || "ブログ",
+        date: fields.blogDate.value.trim() || getTodayDate(),
+        readingTime: fields.readingTime.value.trim() || "約1分",
         file: fields.blogFile.value.trim(),
-        ogImage: fields.ogImage.value.trim(),
+        ogImage: fields.ogImage.value.trim() || "https://www.zerquor.com/images/logo.png",
         breadcrumbTitle: fields.breadcrumbTitle.value.trim(),
         nextTitle: fields.nextTitle.value.trim(),
         nextFile: fields.nextFile.value.trim(),
-        assetVersion: fields.assetVersion.value.trim()
+        assetVersion: fields.assetVersion.value.trim() || "20260616-10"
       };
+    }
+
+    function autoFillArticleSettings(overwrite) {
+      const markdown = mdInput.value.trim();
+
+      if (!markdown) return;
+
+      const parsed = parseMarkdown(markdown);
+      const title = parsed.title || extractTitleFromMarkdown(markdown);
+
+      if (!title) return;
+
+      const plainText = markdownToPlainText(parsed.body);
+      const description = createDescription(title, plainText);
+      const shortDescription = createShortDescription(description);
+      const heroLead = createHeroLead(description);
+      const category = guessCategory(title, plainText);
+      const readingTime = calculateReadingTime(markdown);
+      const breadcrumbTitle = createBreadcrumbTitle(title);
+      const nextTitle = extractNextTitle(markdown);
+      const id = fields.blogId.value.trim() || "blog100001";
+      const file = createFileName(id, title);
+
+      setFieldValue(fields.blogTitle, title, overwrite);
+      setFieldValue(fields.blogDescription, description, overwrite);
+      setFieldValue(fields.blogOgDescription, shortDescription, overwrite);
+      setFieldValue(fields.blogHeroLead, heroLead, overwrite);
+      setFieldValue(fields.blogCategory, category, overwrite);
+      setFieldValue(fields.readingTime, readingTime, overwrite);
+      setFieldValue(fields.breadcrumbTitle, breadcrumbTitle, overwrite);
+      setFieldValue(fields.blogFile, file, overwrite);
+
+      if (!fields.blogDate.value) {
+        fields.blogDate.value = getTodayDate();
+      }
+
+      if (!fields.blogId.value.trim()) {
+        fields.blogId.value = "blog100001";
+      }
+
+      if (nextTitle) {
+        setFieldValue(fields.nextTitle, nextTitle, overwrite);
+
+        const nextId = incrementBlogId(id);
+        const nextFile = createFileName(nextId, nextTitle);
+
+        setFieldValue(fields.nextFile, nextFile, overwrite);
+      }
+    }
+
+    function setFieldValue(field, value, overwrite) {
+      if (!value) return;
+
+      if (overwrite || !field.value.trim()) {
+        field.value = value;
+      }
     }
 
     function parseMarkdown(markdown) {
@@ -507,6 +733,201 @@ SNSアカウントが乗っ取られるかもしれません。
         title,
         body
       };
+    }
+
+    function extractTitleFromMarkdown(markdown) {
+      const match = markdown.match(/^#\s+(.+)$/m);
+      return match ? match[1].trim() : "";
+    }
+
+    function markdownToPlainText(markdown) {
+      return markdown
+        .replace(/^---[\s\S]*?---/m, "")
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/^[-*+]\s+/gm, "")
+        .replace(/^\d+\.\s+/gm, "")
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/`(.*?)`/g, "$1")
+        .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+        .replace(/^---$/gm, "")
+        .replace(/\n{2,}/g, "\n")
+        .trim();
+    }
+
+    function createDescription(title, plainText) {
+      const cleanTitle = title.replace(/^第\d+章\s*/, "").trim();
+
+      const text = plainText
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .filter(line => !line.startsWith("次回は"))
+        .join(" ");
+
+      const shortText = truncateText(text, 90);
+
+      if (cleanTitle.includes("情報セキュリティ")) {
+        return "情報セキュリティの基本を初心者向けに解説。機密性・完全性・可用性の3要素や、フィッシング詐欺、SNS乗っ取りなど身近な脅威について学びます。";
+      }
+
+      if (cleanTitle.includes("個人情報")) {
+        return "個人情報の基本を初心者向けに解説。日常生活やインターネット上で扱う情報の種類と注意点について学びます。";
+      }
+
+      if (cleanTitle.includes("パスワード")) {
+        return "パスワード管理の基本を初心者向けに解説。使い回しの危険性や安全な管理方法について学びます。";
+      }
+
+      if (cleanTitle.includes("フィッシング")) {
+        return "フィッシング詐欺の基本を初心者向けに解説。偽メールや偽サイトの見分け方、被害を防ぐための注意点を学びます。";
+      }
+
+      if (cleanTitle.includes("多要素認証") || cleanTitle.includes("二要素認証")) {
+        return "多要素認証の基本を初心者向けに解説。パスワードだけに頼らず、アカウントを安全に守る方法を学びます。";
+      }
+
+      return `${cleanTitle}について初心者向けに解説。${shortText}`;
+    }
+
+    function createShortDescription(description) {
+      return truncateText(description, 55);
+    }
+
+    function createHeroLead(description) {
+      return truncateText(description, 85);
+    }
+
+    function guessCategory(title, plainText) {
+      const text = `${title} ${plainText}`;
+
+      if (
+        text.includes("情報セキュリティ") ||
+        text.includes("個人情報") ||
+        text.includes("パスワード") ||
+        text.includes("フィッシング") ||
+        text.includes("SNS") ||
+        text.includes("ランサムウェア") ||
+        text.includes("多要素認証") ||
+        text.includes("二要素認証")
+      ) {
+        return "セキュリティリテラシ";
+      }
+
+      if (
+        text.includes("AI") ||
+        text.includes("生成AI") ||
+        text.includes("ChatGPT")
+      ) {
+        return "AI";
+      }
+
+      if (
+        text.includes("研修") ||
+        text.includes("教育") ||
+        text.includes("講座")
+      ) {
+        return "セキュリティ教育";
+      }
+
+      return "ブログ";
+    }
+
+    function calculateReadingTime(markdown) {
+      const plainText = markdownToPlainText(markdown);
+      const charCount = plainText.length;
+
+      const minutes = Math.max(1, Math.ceil(charCount / 600));
+
+      return `約${minutes}分`;
+    }
+
+    function createBreadcrumbTitle(title) {
+      const firstPart = title.split("なぜ")[0].trim();
+
+      if (firstPart.length <= 28) {
+        return firstPart;
+      }
+
+      return truncateText(title, 28);
+    }
+
+    function extractNextTitle(markdown) {
+      const match = markdown.match(/次回は[\s\S]{0,120}?「([^」]+)」/);
+
+      if (match) {
+        return match[1].trim();
+      }
+
+      const boldMatch = markdown.match(/次回は[\s\S]{0,120}?\*\*「([^」]+)」\*\*/);
+
+      if (boldMatch) {
+        return boldMatch[1].trim();
+      }
+
+      return "";
+    }
+
+    function createFileName(id, title) {
+      const slug = createSlugFromJapaneseTitle(title);
+      return `${id}-${slug}.html`;
+    }
+
+    function createSlugFromJapaneseTitle(title) {
+      const text = title.toLowerCase();
+
+      if (text.includes("情報セキュリティ") && text.includes("何")) {
+        return "security-what-is";
+      }
+
+      if (text.includes("個人情報")) {
+        return "personal-information";
+      }
+
+      if (text.includes("パスワード")) {
+        return "password";
+      }
+
+      if (text.includes("フィッシング")) {
+        return "phishing";
+      }
+
+      if (text.includes("sns")) {
+        return "sns-security";
+      }
+
+      if (text.includes("ランサムウェア")) {
+        return "ransomware";
+      }
+
+      if (text.includes("多要素認証") || text.includes("二要素認証")) {
+        return "mfa";
+      }
+
+      if (text.includes("メール")) {
+        return "email-security";
+      }
+
+      if (text.includes("スマートフォン") || text.includes("スマホ")) {
+        return "smartphone-security";
+      }
+
+      return "article";
+    }
+
+    function incrementBlogId(id) {
+      const match = id.match(/^([a-zA-Z]+)(\d+)$/);
+
+      if (!match) {
+        return "blog100002";
+      }
+
+      const prefix = match[1];
+      const numberText = match[2];
+      const nextNumber = String(Number(numberText) + 1).padStart(numberText.length, "0");
+
+      return `${prefix}${nextNumber}`;
     }
 
     function convertMarkdownBodyToArticleSections(markdown) {
@@ -598,7 +1019,6 @@ SNSアカウントが乗っ取られるかもしれません。
       const breadcrumbTitle = escapeHtml(meta.breadcrumbTitle || meta.title);
       const assetVersion = escapeHtml(meta.assetVersion || "20260616-10");
       const heroTitle = formatHeroTitle(meta.title);
-
       const nextChapterHtml = buildNextChapterHtml(meta);
 
       return `<!DOCTYPE html>
@@ -691,7 +1111,7 @@ SNSアカウントが乗っ取られるかもしれません。
     <section class="blog-article-section">
       <div class="container">
 
-        <article class="blog-post" data-blog-id="${id}" data-blog-date="${rawDate}">
+        <article id="${id}" class="blog-post" data-blog-id="${id}" data-blog-date="${rawDate}">
 
 ${bodyHtml}
 
@@ -772,6 +1192,28 @@ ${nextChapterHtml}
       return dateText;
     }
 
+    function getTodayDate() {
+      const today = new Date();
+
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function truncateText(text, maxLength) {
+      const cleanText = String(text || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (cleanText.length <= maxLength) {
+        return cleanText;
+      }
+
+      return cleanText.slice(0, maxLength) + "。";
+    }
+
     function indentHtml(html, spaces) {
       const padding = " ".repeat(spaces);
 
@@ -796,8 +1238,22 @@ ${nextChapterHtml}
         return;
       }
 
-      await navigator.clipboard.writeText(text);
-      alert(message);
+      try {
+        await navigator.clipboard.writeText(text);
+        alert(message);
+      } catch (error) {
+        fallbackCopyText(text);
+        alert(message);
+      }
+    }
+
+    function fallbackCopyText(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
     }
 
     function downloadHtml() {
@@ -808,7 +1264,9 @@ ${nextChapterHtml}
         return;
       }
 
-      downloadFile(html, fields.blogFile.value.trim() || "blog.html", "text/html;charset=utf-8");
+      const fileName = fields.blogFile.value.trim() || "blog.html";
+
+      downloadFile(html, fileName, "text/html;charset=utf-8");
     }
 
     function downloadJson() {
@@ -833,9 +1291,8 @@ ${nextChapterHtml}
 
       URL.revokeObjectURL(url);
     }
-
-    insertSample();
   </script>
 
 </body>
+
 </html>
