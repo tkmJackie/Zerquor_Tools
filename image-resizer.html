@@ -217,7 +217,7 @@
   <main class="app">
     <h1 class="page-title">画像サイズ調整ツール</h1>
     <p class="page-lead">
-      画像をアップロードして、px単位・％単位でサイズを調整できます。調整後のHTMLタグも自動生成します。
+      画像をアップロードして、px単位・％単位でサイズを調整できます。黒枠の追加やHTMLタグの自動生成もできます。
     </p>
 
     <div class="layout">
@@ -253,6 +253,11 @@
         <div class="check-row">
           <input type="checkbox" id="keepRatio" checked />
           <label for="keepRatio">アスペクト比を固定する</label>
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" id="borderCheck" />
+          <label for="borderCheck">黒枠をつける</label>
         </div>
 
         <div id="pxControls">
@@ -326,11 +331,13 @@
     /* =========================
        Image Resize App
     ========================= */
+
     const imageInput = document.getElementById("imageInput");
     const srcInput = document.getElementById("srcInput");
     const altInput = document.getElementById("altInput");
     const modeSelect = document.getElementById("modeSelect");
     const keepRatio = document.getElementById("keepRatio");
+    const borderCheck = document.getElementById("borderCheck");
 
     const pxControls = document.getElementById("pxControls");
     const percentControls = document.getElementById("percentControls");
@@ -358,7 +365,6 @@
     let imageDataUrl = "";
     let currentWidth = 0;
     let currentHeight = 0;
-
     let lastChanged = "width";
 
     imageInput.addEventListener("change", handleImageUpload);
@@ -366,6 +372,7 @@
     altInput.addEventListener("input", updateAll);
     modeSelect.addEventListener("change", handleModeChange);
     keepRatio.addEventListener("change", updateAll);
+    borderCheck.addEventListener("change", updateAll);
 
     widthInput.addEventListener("input", () => {
       lastChanged = "width";
@@ -484,6 +491,7 @@
 
       if (modeSelect.value === "percent") {
         const percent = Math.max(1, Number(percentInput.value) || 1);
+
         currentWidth = Math.round(originalWidth * percent / 100);
         currentHeight = Math.round(originalHeight * percent / 100);
 
@@ -496,6 +504,12 @@
 
       previewImage.style.width = currentWidth + "px";
       previewImage.style.height = currentHeight + "px";
+
+      if (borderCheck.checked) {
+        previewImage.style.border = "2px solid #000";
+      } else {
+        previewImage.style.border = "none";
+      }
 
       updateInfo();
       generateHtml();
@@ -513,16 +527,28 @@
       const src = escapeHtml(srcInput.value.trim() || "images/sample.png");
       const alt = escapeHtml(altInput.value.trim());
 
+      const borderStyle = borderCheck.checked ? "border: 2px solid #000;" : "";
+
       let html = "";
 
       if (modeSelect.value === "px") {
-        html =
-          `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}">`;
+        if (borderCheck.checked) {
+          html =
+            `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}" style="${borderStyle}">`;
+        } else {
+          html =
+            `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}">`;
+        }
       } else {
         const percent = Math.max(1, Number(percentInput.value) || 1);
 
-        html =
-          `<img src="${src}" alt="${alt}" style="width: ${percent}%; height: auto;">`;
+        if (borderCheck.checked) {
+          html =
+            `<img src="${src}" alt="${alt}" style="width: ${percent}%; height: auto; ${borderStyle}">`;
+        } else {
+          html =
+            `<img src="${src}" alt="${alt}" style="width: ${percent}%; height: auto;">`;
+        }
       }
 
       htmlOutput.value = html;
@@ -550,10 +576,23 @@
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
 
-      canvas.width = currentWidth;
-      canvas.height = currentHeight;
+      const borderWidth = borderCheck.checked ? 2 : 0;
 
-      ctx.drawImage(previewImage, 0, 0, currentWidth, currentHeight);
+      canvas.width = currentWidth + borderWidth * 2;
+      canvas.height = currentHeight + borderWidth * 2;
+
+      if (borderCheck.checked) {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.drawImage(
+        previewImage,
+        borderWidth,
+        borderWidth,
+        currentWidth,
+        currentHeight
+      );
 
       const link = document.createElement("a");
       link.download = "resized-image.png";
@@ -569,7 +608,9 @@
 
       try {
         await navigator.clipboard.writeText(htmlOutput.value);
+
         copyButton.textContent = "コピーしました";
+
         setTimeout(() => {
           copyButton.textContent = "HTMLをコピー";
         }, 1200);
@@ -589,6 +630,9 @@
       percentInput.value = 100;
       htmlOutput.value = "";
 
+      keepRatio.checked = true;
+      borderCheck.checked = false;
+
       originalWidth = 0;
       originalHeight = 0;
       currentWidth = 0;
@@ -596,7 +640,11 @@
       imageDataUrl = "";
 
       previewImage.src = "";
+      previewImage.style.width = "";
+      previewImage.style.height = "";
+      previewImage.style.border = "none";
       previewImage.classList.add("hidden");
+
       emptyMessage.classList.remove("hidden");
 
       originalSize.textContent = "-";
