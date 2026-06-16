@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Markdown to Zerquor Blog Converter</title>
+
+  <!-- Markdown変換 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- HTMLサニタイズ -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    header {
+      background: #111827;
+      color: #ffffff;
+      padding: 24px;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 0;
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    main {
+      width: min(1280px, calc(100% - 32px));
+      margin: 24px auto 48px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .panel h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 420px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .output-area {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      min-height: 260px;
+      max-height: 520px;
+      overflow: auto;
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #b91c1c;
+      color: #ffffff;
+    }
+
+    button.secondary {
+      background: #374151;
+    }
+
+    button.light {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .hint {
+      margin-top: 8px;
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    iframe {
+      width: 100%;
+      height: 520px;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      background: #ffffff;
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Markdown to Zerquor Blog Converter</h1>
+    <p>Markdownから、Zerquorブログ用HTMLとblogs.json用JSONを同時生成します。</p>
+  </header>
+
+  <main>
+    <div class="grid">
+
+      <section class="panel">
+        <h2>記事設定</h2>
+
+        <div class="form-group">
+          <label for="blogId">id</label>
+          <input id="blogId" value="blog10001">
+        </div>
+
+        <div class="form-group">
+          <label for="blogTitle">title</label>
+          <input id="blogTitle" value="第1章 情報セキュリティって何？なぜ私たちに必要なのか">
+        </div>
+
+        <div class="form-group">
+          <label for="blogDescription">description</label>
+          <textarea id="blogDescription" style="min-height: 90px;">情報セキュリティの基本を初心者向けに解説。機密性・完全性・可用性の3要素や、フィッシング詐欺、SNS乗っ取りなど身近な脅威について学びます。</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="blogOgDescription">OGP用の短い説明</label>
+          <input id="blogOgDescription" value="初心者向けに情報セキュリティの基本を解説します。">
+        </div>
+
+        <div class="form-group">
+          <label for="blogHeroLead">記事上部のリード文</label>
+          <textarea id="blogHeroLead" style="min-height: 90px;">情報セキュリティの基本を初心者向けに解説。身近な被害例から、今日からできる基本対策まで分かりやすく紹介します。</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="blogCategory">category</label>
+          <input id="blogCategory" value="セキュリティリテラシ">
+        </div>
+
+        <div class="form-group">
+          <label for="blogDate">date</label>
+          <input id="blogDate" type="date" value="2026-06-15">
+        </div>
+
+        <div class="form-group">
+          <label for="readingTime">readingTime</label>
+          <input id="readingTime" value="約8分">
+        </div>
+
+        <div class="form-group">
+          <label for="blogFile">file</label>
+          <input id="blogFile" value="blog10001-security-what-is.html">
+        </div>
+
+        <div class="form-group">
+          <label for="ogImage">og:image</label>
+          <input id="ogImage" value="https://www.zerquor.com/images/blog/security-basic.png">
+        </div>
+
+        <div class="form-group">
+          <label for="breadcrumbTitle">パンくず用タイトル</label>
+          <input id="breadcrumbTitle" value="第1章 情報セキュリティって何？">
+        </div>
+
+        <div class="form-group">
+          <label for="nextTitle">次の記事タイトル</label>
+          <input id="nextTitle" value="第2章 あなたの情報はどこにある？">
+        </div>
+
+        <div class="form-group">
+          <label for="nextFile">次の記事ファイル</label>
+          <input id="nextFile" value="blog10002-personal-information.html">
+        </div>
+
+        <div class="form-group">
+          <label for="assetVersion">CSS / JS バージョン</label>
+          <input id="assetVersion" value="20260616-10">
+        </div>
+
+        <div class="buttons">
+          <button id="convertBtn">変換する</button>
+          <button id="sampleBtn" class="light">サンプルを入れる</button>
+        </div>
+
+        <p class="hint">
+          ※ idはJSONとHTMLのdata属性に使います。file名と合わせるなら「blog10001」のように統一するのがおすすめです。
+        </p>
+      </section>
+
+      <div class="output-area">
+
+        <section class="panel">
+          <h2>Markdown入力</h2>
+          <textarea id="mdInput"></textarea>
+        </section>
+
+        <section class="panel">
+          <h2>HTML出力</h2>
+          <pre><code id="htmlOutput"></code></pre>
+
+          <div class="buttons">
+            <button id="copyHtmlBtn" class="secondary">HTMLをコピー</button>
+            <button id="downloadHtmlBtn" class="secondary">HTMLファイル保存</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>JSON出力</h2>
+          <pre><code id="jsonOutput"></code></pre>
+
+          <div class="buttons">
+            <button id="copyJsonBtn" class="secondary">JSONをコピー</button>
+            <button id="downloadJsonBtn" class="secondary">JSONファイル保存</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>プレビュー</h2>
+          <iframe id="previewFrame"></iframe>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const fields = {
+      blogId: document.getElementById("blogId"),
+      blogTitle: document.getElementById("blogTitle"),
+      blogDescription: document.getElementById("blogDescription"),
+      blogOgDescription: document.getElementById("blogOgDescription"),
+      blogHeroLead: document.getElementById("blogHeroLead"),
+      blogCategory: document.getElementById("blogCategory"),
+      blogDate: document.getElementById("blogDate"),
+      readingTime: document.getElementById("readingTime"),
+      blogFile: document.getElementById("blogFile"),
+      ogImage: document.getElementById("ogImage"),
+      breadcrumbTitle: document.getElementById("breadcrumbTitle"),
+      nextTitle: document.getElementById("nextTitle"),
+      nextFile: document.getElementById("nextFile"),
+      assetVersion: document.getElementById("assetVersion")
+    };
+
+    const mdInput = document.getElementById("mdInput");
+    const htmlOutput = document.getElementById("htmlOutput");
+    const jsonOutput = document.getElementById("jsonOutput");
+    const previewFrame = document.getElementById("previewFrame");
+
+    document.getElementById("convertBtn").addEventListener("click", convert);
+    document.getElementById("sampleBtn").addEventListener("click", insertSample);
+
+    document.getElementById("copyHtmlBtn").addEventListener("click", () => copyText(htmlOutput.textContent, "HTMLをコピーしました。"));
+    document.getElementById("copyJsonBtn").addEventListener("click", () => copyText(jsonOutput.textContent, "JSONをコピーしました。"));
+
+    document.getElementById("downloadHtmlBtn").addEventListener("click", downloadHtml);
+    document.getElementById("downloadJsonBtn").addEventListener("click", downloadJson);
+
+    function insertSample() {
+      mdInput.value = `# 第1章 情報セキュリティって何？なぜ私たちに必要なのか
+
+## はじめに
+
+「情報セキュリティ」という言葉を聞くと、多くの人は次のようなイメージを持つかもしれません。
+
+* IT担当者がやるもの
+* 大企業だけに必要なもの
+* ハッカー対策のこと
+* 自分には関係ないもの
+
+しかし実際には、情報セキュリティはインターネットを利用するすべての人に関係があります。
+
+スマートフォンでSNSを見る。
+ネットショッピングを利用する。
+ネットバンキングを使う。
+メールを送受信する。
+
+私たちは日常生活の中で、たくさんの情報を扱っています。
+
+もしそれらの情報が盗まれたり、不正利用されたりしたらどうなるでしょうか。
+
+クレジットカードが勝手に使われるかもしれません。
+SNSアカウントが乗っ取られるかもしれません。
+大切な写真やデータが失われるかもしれません。
+
+情報セキュリティとは、このような被害から情報やサービスを守るための考え方や取り組みのことです。
+
+今回は、情報セキュリティの基本について分かりやすく解説します。
+
+---
+
+## 情報セキュリティとは？
+
+情報セキュリティとは、
+
+**「大切な情報を安全に守ること」**
+
+です。
+
+例えば次のような情報があります。
+
+* 氏名
+* 住所
+* 電話番号
+* メールアドレス
+* クレジットカード情報
+* パスワード
+* 写真や動画
+* 会社の顧客情報
+
+これらは私たちにとって大切な情報です。
+
+情報セキュリティは単に「情報を隠すこと」ではありません。
+
+必要な人が、必要なときに、正しく利用できる状態を維持することも重要です。
+
+---
+
+## 情報セキュリティの3つの基本
+
+情報セキュリティには有名な3つの考え方があります。
+
+### 1. 機密性（Confidentiality）
+
+許可された人だけが情報を見られる状態です。
+
+例えば、
+
+* パスワードを設定する
+* ログイン認証を行う
+* ファイルを暗号化する
+
+などが該当します。
+
+もし機密性が守られなければ、他人に個人情報を盗み見られる可能性があります。
+
+---
+
+### 2. 完全性（Integrity）
+
+情報が勝手に変更されていない状態です。
+
+例えば、
+
+* 銀行の残高
+* 契約書
+* 成績データ
+
+などが改ざんされてしまうと大きな問題になります。
+
+正しい情報が維持されていることが重要です。
+
+---
+
+### 3. 可用性（Availability）
+
+必要なときに利用できる状態です。
+
+例えば、
+
+* ネットバンキング
+* オンラインショップ
+* メールサービス
+
+が突然使えなくなると困ります。
+
+情報を守るだけでなく、必要なときに利用できることも情報セキュリティの重要な要素です。
+
+---
+
+## まとめ
+
+今回は情報セキュリティの基本について解説しました。
+
+ポイントを振り返りましょう。
+
+* 情報セキュリティとは大切な情報を守ること
+* 機密性・完全性・可用性の3つが基本
+* インターネット利用者全員に関係がある
+
+次回は、
+
+**「第2章 あなたの情報はどこにある？個人情報について知ろう」**
+
+をテーマに、私たちが普段どのような情報を扱っているのかを解説します。`;
+
+      convert();
+    }
+
+    function convert() {
+      const parsedMarkdown = parseMarkdown(mdInput.value);
+
+      if (!fields.blogTitle.value.trim() && parsedMarkdown.title) {
+        fields.blogTitle.value = parsedMarkdown.title;
+      }
+
+      const meta = getMeta();
+
+      const bodyHtml = convertMarkdownBodyToArticleSections(parsedMarkdown.body);
+      const pageHtml = buildPageHtml(meta, bodyHtml);
+      const json = buildJson(meta);
+
+      htmlOutput.textContent = pageHtml;
+      jsonOutput.textContent = json;
+      previewFrame.srcdoc = pageHtml;
+    }
+
+    function getMeta() {
+      return {
+        id: fields.blogId.value.trim(),
+        title: fields.blogTitle.value.trim(),
+        description: fields.blogDescription.value.trim(),
+        ogDescription: fields.blogOgDescription.value.trim(),
+        heroLead: fields.blogHeroLead.value.trim(),
+        category: fields.blogCategory.value.trim(),
+        date: fields.blogDate.value.trim(),
+        readingTime: fields.readingTime.value.trim(),
+        file: fields.blogFile.value.trim(),
+        ogImage: fields.ogImage.value.trim(),
+        breadcrumbTitle: fields.breadcrumbTitle.value.trim(),
+        nextTitle: fields.nextTitle.value.trim(),
+        nextFile: fields.nextFile.value.trim(),
+        assetVersion: fields.assetVersion.value.trim()
+      };
+    }
+
+    function parseMarkdown(markdown) {
+      let body = markdown.trim();
+      let title = "";
+
+      const firstH1 = body.match(/^#\s+(.+)$/m);
+
+      if (firstH1) {
+        title = firstH1[1].trim();
+        body = body.replace(firstH1[0], "").trim();
+      }
+
+      return {
+        title,
+        body
+      };
+    }
+
+    function convertMarkdownBodyToArticleSections(markdown) {
+      marked.setOptions({
+        gfm: true,
+        breaks: true
+      });
+
+      const tokens = marked.lexer(markdown);
+      let html = "";
+      let buffer = [];
+      let sectionOpen = false;
+
+      function openSectionWithH2(text) {
+        if (sectionOpen) {
+          flushBuffer();
+          html += `\n          </section>\n\n`;
+        }
+
+        html += `          <section>\n`;
+        html += `            <h2>${escapeHtml(text)}</h2>\n`;
+
+        sectionOpen = true;
+      }
+
+      function openSectionIfNeeded() {
+        if (!sectionOpen) {
+          html += `          <section>\n`;
+          sectionOpen = true;
+        }
+      }
+
+      function flushBuffer() {
+        if (!buffer.length) return;
+
+        const rendered = marked.parser(buffer).trim();
+
+        if (rendered) {
+          html += indentHtml(rendered, 12) + "\n";
+        }
+
+        buffer = [];
+      }
+
+      tokens.forEach(token => {
+        if (token.type === "space") {
+          return;
+        }
+
+        if (token.type === "hr") {
+          return;
+        }
+
+        if (token.type === "heading" && token.depth === 2) {
+          openSectionWithH2(token.text);
+          return;
+        }
+
+        openSectionIfNeeded();
+        buffer.push(token);
+      });
+
+      flushBuffer();
+
+      if (sectionOpen) {
+        html += `\n          </section>`;
+      }
+
+      return DOMPurify.sanitize(html, {
+        USE_PROFILES: {
+          html: true
+        }
+      });
+    }
+
+    function buildPageHtml(meta, bodyHtml) {
+      const title = escapeHtml(meta.title);
+      const description = escapeHtml(meta.description);
+      const ogDescription = escapeHtml(meta.ogDescription || meta.description);
+      const heroLead = escapeHtml(meta.heroLead || meta.description);
+      const category = escapeHtml(meta.category);
+      const date = escapeHtml(formatDate(meta.date));
+      const rawDate = escapeHtml(meta.date);
+      const readingTime = escapeHtml(meta.readingTime);
+      const file = escapeHtml(meta.file);
+      const id = escapeHtml(meta.id);
+      const canonical = `https://www.zerquor.com/${file}`;
+      const ogImage = escapeHtml(meta.ogImage);
+      const breadcrumbTitle = escapeHtml(meta.breadcrumbTitle || meta.title);
+      const assetVersion = escapeHtml(meta.assetVersion || "20260616-10");
+      const heroTitle = formatHeroTitle(meta.title);
+
+      const nextChapterHtml = buildNextChapterHtml(meta);
+
+      return `<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHX5DH3R9P"><\/script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-DHX5DH3R9P");
+  <\/script>
+
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "x57jrclrq8");
+  <\/script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>${title} | Zerquor</title>
+
+  <meta
+    name="description"
+    content="${description}"
+  >
+
+  <link
+    rel="canonical"
+    href="${canonical}"
+  >
+
+  <!-- OGP -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${ogDescription}">
+  <meta property="og:image" content="${ogImage}">
+  <meta property="og:url" content="${canonical}">
+
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="styles.css?v=${assetVersion}">
+
+  <!-- Favicon -->
+  <link rel="icon" href="images/logo.png">
+</head>
+
+<body>
+
+  <div id="header"></div>
+
+  <main>
+
+    <section class="blog-article-hero">
+      <div class="container">
+
+        <nav class="breadcrumb">
+          <a href="index.html">ホーム</a>
+          <span>›</span>
+          <a href="blog.html">ブログ</a>
+          <span>›</span>
+          <span>${breadcrumbTitle}</span>
+        </nav>
+
+        <div class="blog-meta">
+          <span>${date}</span>
+          <span>${category}</span>
+          <span>読了時間：${readingTime}</span>
+        </div>
+
+        <h1>
+          ${heroTitle}
+        </h1>
+
+        <p>
+          ${heroLead}
+        </p>
+
+      </div>
+    </section>
+
+    <section class="blog-article-section">
+      <div class="container">
+
+        <article class="blog-post" data-blog-id="${id}" data-blog-date="${rawDate}">
+
+${bodyHtml}
+
+        </article>
+${nextChapterHtml}
+      </div>
+    </section>
+
+    <div id="cta"></div>
+
+  </main>
+
+  <div id="footer"></div>
+
+  <div id="ai-chat-container"></div>
+
+  <!-- JavaScript -->
+  <script src="script.js?v=${assetVersion}"><\/script>
+
+</body>
+</html>`;
+    }
+
+    function buildNextChapterHtml(meta) {
+      if (!meta.nextTitle || !meta.nextFile) {
+        return "";
+      }
+
+      return `
+
+        <section class="next-chapter">
+          <h3>次の記事</h3>
+
+          <a href="${escapeHtml(meta.nextFile)}">
+            ${escapeHtml(meta.nextTitle)}
+          </a>
+        </section>
+`;
+    }
+
+    function buildJson(meta) {
+      const item = {
+        id: meta.id,
+        title: meta.title,
+        description: meta.description,
+        category: meta.category,
+        date: meta.date,
+        readingTime: meta.readingTime,
+        file: meta.file
+      };
+
+      return JSON.stringify([item], null, 2);
+    }
+
+    function formatHeroTitle(title) {
+      const safeTitle = escapeHtml(title);
+
+      if (safeTitle.includes("？なぜ")) {
+        return safeTitle.replace("？なぜ", "？<br>\n          なぜ");
+      }
+
+      if (safeTitle.includes("?なぜ")) {
+        return safeTitle.replace("?なぜ", "?<br>\n          なぜ");
+      }
+
+      return safeTitle;
+    }
+
+    function formatDate(dateText) {
+      if (!dateText) return "";
+
+      const parts = dateText.split("-");
+
+      if (parts.length === 3) {
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      }
+
+      return dateText;
+    }
+
+    function indentHtml(html, spaces) {
+      const padding = " ".repeat(spaces);
+
+      return html
+        .split("\n")
+        .map(line => line.trim() ? padding + line : "")
+        .join("\n");
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function copyText(text, message) {
+      if (!text.trim()) {
+        alert("先に変換してください。");
+        return;
+      }
+
+      await navigator.clipboard.writeText(text);
+      alert(message);
+    }
+
+    function downloadHtml() {
+      const html = htmlOutput.textContent.trim();
+
+      if (!html) {
+        alert("先に変換してください。");
+        return;
+      }
+
+      downloadFile(html, fields.blogFile.value.trim() || "blog.html", "text/html;charset=utf-8");
+    }
+
+    function downloadJson() {
+      const json = jsonOutput.textContent.trim();
+
+      if (!json) {
+        alert("先に変換してください。");
+        return;
+      }
+
+      downloadFile(json, "blog-item.json", "application/json;charset=utf-8");
+    }
+
+    function downloadFile(content, fileName, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    insertSample();
+  </script>
+
+</body>
+</html>
