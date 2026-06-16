@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>画像サイズ調整ツール</title>
+
+  <style>
+    /* =========================
+       Base
+    ========================= */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+      line-height: 1.7;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    .page-title {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0.03em;
+    }
+
+    .page-lead {
+      margin: 0 0 24px;
+      color: #6b7280;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .panel-title {
+      margin: 0 0 16px;
+      font-size: 18px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 15px;
+      background: #fff;
+    }
+
+    .field textarea {
+      min-height: 130px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .check-row input {
+      width: auto;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #111827;
+      color: #fff;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    .note {
+      margin: 8px 0 0;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    /* =========================
+       Preview
+    ========================= */
+    .preview-area {
+      min-height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      border: 2px dashed #d1d5db;
+      border-radius: 16px;
+      background:
+        linear-gradient(45deg, #f9fafb 25%, transparent 25%),
+        linear-gradient(-45deg, #f9fafb 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #f9fafb 75%),
+        linear-gradient(-45deg, transparent 75%, #f9fafb 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+      overflow: auto;
+    }
+
+    .preview-area img {
+      display: block;
+      max-width: none;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+    }
+
+    .empty {
+      text-align: center;
+      color: #6b7280;
+    }
+
+    .info {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .info-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .info-card strong {
+      display: block;
+      color: #111827;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 860px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .info {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1 class="page-title">画像サイズ調整ツール</h1>
+    <p class="page-lead">
+      画像をアップロードして、px単位・％単位でサイズを調整できます。調整後のHTMLタグも自動生成します。
+    </p>
+
+    <div class="layout">
+      <!-- Control Panel -->
+      <section class="panel">
+        <h2 class="panel-title">設定</h2>
+
+        <div class="field">
+          <label for="imageInput">画像を選択</label>
+          <input type="file" id="imageInput" accept="image/*" />
+          <p class="note">JPG、PNG、WebP、GIFなどを選択できます。</p>
+        </div>
+
+        <div class="field">
+          <label for="srcInput">HTML出力用の画像パス</label>
+          <input type="text" id="srcInput" placeholder="例：images/sample.png" />
+          <p class="note">実際のサイトで使う画像パスを入力してください。</p>
+        </div>
+
+        <div class="field">
+          <label for="altInput">alt属性</label>
+          <input type="text" id="altInput" placeholder="例：サービス紹介画像" />
+        </div>
+
+        <div class="field">
+          <label for="modeSelect">サイズ指定方法</label>
+          <select id="modeSelect">
+            <option value="px">pxで指定</option>
+            <option value="percent">％で指定</option>
+          </select>
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" id="keepRatio" checked />
+          <label for="keepRatio">アスペクト比を固定する</label>
+        </div>
+
+        <div id="pxControls">
+          <div class="row">
+            <div class="field">
+              <label for="widthInput">幅 px</label>
+              <input type="number" id="widthInput" min="1" step="1" />
+            </div>
+
+            <div class="field">
+              <label for="heightInput">高さ px</label>
+              <input type="number" id="heightInput" min="1" step="1" />
+            </div>
+          </div>
+        </div>
+
+        <div id="percentControls" class="hidden">
+          <div class="field">
+            <label for="percentInput">拡大・縮小率 %</label>
+            <input type="number" id="percentInput" min="1" step="1" value="100" />
+            <p class="note">50なら半分、200なら2倍のサイズになります。</p>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" id="resetButton" class="secondary">元サイズに戻す</button>
+          <button type="button" id="downloadButton">画像をダウンロード</button>
+        </div>
+      </section>
+
+      <!-- Preview Panel -->
+      <section class="panel">
+        <h2 class="panel-title">プレビュー</h2>
+
+        <div class="preview-area" id="previewArea">
+          <div class="empty" id="emptyMessage">
+            ここに画像プレビューが表示されます。
+          </div>
+          <img id="previewImage" class="hidden" alt="" />
+        </div>
+
+        <div class="info">
+          <div class="info-card">
+            <strong id="originalSize">-</strong>
+            元のサイズ
+          </div>
+          <div class="info-card">
+            <strong id="currentSize">-</strong>
+            現在の表示サイズ
+          </div>
+          <div class="info-card">
+            <strong id="scaleSize">-</strong>
+            拡大・縮小率
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 20px;">
+          <label for="htmlOutput">HTML出力</label>
+          <textarea id="htmlOutput" readonly placeholder="画像を選択するとHTMLが生成されます。"></textarea>
+        </div>
+
+        <div class="button-row">
+          <button type="button" id="copyButton">HTMLをコピー</button>
+          <button type="button" id="clearButton" class="danger">クリア</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    /* =========================
+       Image Resize App
+    ========================= */
+    const imageInput = document.getElementById("imageInput");
+    const srcInput = document.getElementById("srcInput");
+    const altInput = document.getElementById("altInput");
+    const modeSelect = document.getElementById("modeSelect");
+    const keepRatio = document.getElementById("keepRatio");
+
+    const pxControls = document.getElementById("pxControls");
+    const percentControls = document.getElementById("percentControls");
+
+    const widthInput = document.getElementById("widthInput");
+    const heightInput = document.getElementById("heightInput");
+    const percentInput = document.getElementById("percentInput");
+
+    const previewImage = document.getElementById("previewImage");
+    const emptyMessage = document.getElementById("emptyMessage");
+
+    const originalSize = document.getElementById("originalSize");
+    const currentSize = document.getElementById("currentSize");
+    const scaleSize = document.getElementById("scaleSize");
+
+    const htmlOutput = document.getElementById("htmlOutput");
+
+    const resetButton = document.getElementById("resetButton");
+    const downloadButton = document.getElementById("downloadButton");
+    const copyButton = document.getElementById("copyButton");
+    const clearButton = document.getElementById("clearButton");
+
+    let originalWidth = 0;
+    let originalHeight = 0;
+    let imageDataUrl = "";
+    let currentWidth = 0;
+    let currentHeight = 0;
+
+    let lastChanged = "width";
+
+    imageInput.addEventListener("change", handleImageUpload);
+    srcInput.addEventListener("input", updateAll);
+    altInput.addEventListener("input", updateAll);
+    modeSelect.addEventListener("change", handleModeChange);
+    keepRatio.addEventListener("change", updateAll);
+
+    widthInput.addEventListener("input", () => {
+      lastChanged = "width";
+      handlePxInput();
+    });
+
+    heightInput.addEventListener("input", () => {
+      lastChanged = "height";
+      handlePxInput();
+    });
+
+    percentInput.addEventListener("input", handlePercentInput);
+
+    resetButton.addEventListener("click", resetSize);
+    downloadButton.addEventListener("click", downloadResizedImage);
+    copyButton.addEventListener("click", copyHtml);
+    clearButton.addEventListener("click", clearAll);
+
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        imageDataUrl = e.target.result;
+
+        previewImage.onload = function() {
+          originalWidth = previewImage.naturalWidth;
+          originalHeight = previewImage.naturalHeight;
+
+          currentWidth = originalWidth;
+          currentHeight = originalHeight;
+
+          widthInput.value = originalWidth;
+          heightInput.value = originalHeight;
+          percentInput.value = 100;
+
+          if (!srcInput.value.trim()) {
+            srcInput.value = "images/" + file.name;
+          }
+
+          emptyMessage.classList.add("hidden");
+          previewImage.classList.remove("hidden");
+
+          updateAll();
+        };
+
+        previewImage.src = imageDataUrl;
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function handleModeChange() {
+      const mode = modeSelect.value;
+
+      if (mode === "px") {
+        pxControls.classList.remove("hidden");
+        percentControls.classList.add("hidden");
+      } else {
+        pxControls.classList.add("hidden");
+        percentControls.classList.remove("hidden");
+      }
+
+      updateAll();
+    }
+
+    function handlePxInput() {
+      if (!hasImage()) return;
+
+      let width = Number(widthInput.value);
+      let height = Number(heightInput.value);
+
+      if (keepRatio.checked) {
+        if (lastChanged === "width" && width > 0) {
+          height = Math.round(width * originalHeight / originalWidth);
+          heightInput.value = height;
+        }
+
+        if (lastChanged === "height" && height > 0) {
+          width = Math.round(height * originalWidth / originalHeight);
+          widthInput.value = width;
+        }
+      }
+
+      currentWidth = Math.max(1, width);
+      currentHeight = Math.max(1, height);
+
+      const percent = Math.round((currentWidth / originalWidth) * 100);
+      percentInput.value = percent;
+
+      updateAll();
+    }
+
+    function handlePercentInput() {
+      if (!hasImage()) return;
+
+      const percent = Math.max(1, Number(percentInput.value) || 1);
+
+      currentWidth = Math.round(originalWidth * percent / 100);
+      currentHeight = Math.round(originalHeight * percent / 100);
+
+      widthInput.value = currentWidth;
+      heightInput.value = currentHeight;
+
+      updateAll();
+    }
+
+    function updateAll() {
+      if (!hasImage()) {
+        htmlOutput.value = "";
+        return;
+      }
+
+      if (modeSelect.value === "percent") {
+        const percent = Math.max(1, Number(percentInput.value) || 1);
+        currentWidth = Math.round(originalWidth * percent / 100);
+        currentHeight = Math.round(originalHeight * percent / 100);
+
+        widthInput.value = currentWidth;
+        heightInput.value = currentHeight;
+      } else {
+        currentWidth = Math.max(1, Number(widthInput.value) || originalWidth);
+        currentHeight = Math.max(1, Number(heightInput.value) || originalHeight);
+      }
+
+      previewImage.style.width = currentWidth + "px";
+      previewImage.style.height = currentHeight + "px";
+
+      updateInfo();
+      generateHtml();
+    }
+
+    function updateInfo() {
+      const percent = Math.round((currentWidth / originalWidth) * 100);
+
+      originalSize.textContent = originalWidth + " × " + originalHeight + " px";
+      currentSize.textContent = currentWidth + " × " + currentHeight + " px";
+      scaleSize.textContent = percent + "%";
+    }
+
+    function generateHtml() {
+      const src = escapeHtml(srcInput.value.trim() || "images/sample.png");
+      const alt = escapeHtml(altInput.value.trim());
+
+      let html = "";
+
+      if (modeSelect.value === "px") {
+        html =
+          `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}">`;
+      } else {
+        const percent = Math.max(1, Number(percentInput.value) || 1);
+
+        html =
+          `<img src="${src}" alt="${alt}" style="width: ${percent}%; height: auto;">`;
+      }
+
+      htmlOutput.value = html;
+    }
+
+    function resetSize() {
+      if (!hasImage()) return;
+
+      currentWidth = originalWidth;
+      currentHeight = originalHeight;
+
+      widthInput.value = originalWidth;
+      heightInput.value = originalHeight;
+      percentInput.value = 100;
+
+      updateAll();
+    }
+
+    function downloadResizedImage() {
+      if (!hasImage()) {
+        alert("先に画像を選択してください。");
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = currentWidth;
+      canvas.height = currentHeight;
+
+      ctx.drawImage(previewImage, 0, 0, currentWidth, currentHeight);
+
+      const link = document.createElement("a");
+      link.download = "resized-image.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    async function copyHtml() {
+      if (!htmlOutput.value.trim()) {
+        alert("コピーするHTMLがありません。");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(htmlOutput.value);
+        copyButton.textContent = "コピーしました";
+        setTimeout(() => {
+          copyButton.textContent = "HTMLをコピー";
+        }, 1200);
+      } catch (error) {
+        htmlOutput.select();
+        document.execCommand("copy");
+        alert("HTMLをコピーしました。");
+      }
+    }
+
+    function clearAll() {
+      imageInput.value = "";
+      srcInput.value = "";
+      altInput.value = "";
+      widthInput.value = "";
+      heightInput.value = "";
+      percentInput.value = 100;
+      htmlOutput.value = "";
+
+      originalWidth = 0;
+      originalHeight = 0;
+      currentWidth = 0;
+      currentHeight = 0;
+      imageDataUrl = "";
+
+      previewImage.src = "";
+      previewImage.classList.add("hidden");
+      emptyMessage.classList.remove("hidden");
+
+      originalSize.textContent = "-";
+      currentSize.textContent = "-";
+      scaleSize.textContent = "-";
+    }
+
+    function hasImage() {
+      return originalWidth > 0 && originalHeight > 0 && imageDataUrl;
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+  </script>
+</body>
+</html>
