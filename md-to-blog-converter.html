@@ -203,7 +203,6 @@
         <textarea id="mdInput" placeholder="# 第1章 情報セキュリティって何？なぜ私たちに必要なのか"></textarea>
 
         <div class="buttons">
-          <button id="autoFillBtn" class="light">記事設定を自動入力</button>
           <button id="convertBtn">変換する</button>
           <button id="sampleBtn" class="light">サンプルを入れる</button>
           <button id="clearBtn" class="light">クリア</button>
@@ -302,6 +301,10 @@
             <input id="nextFile" value="">
           </div>
 
+        </div>
+
+        <div class="buttons">
+          <button id="autoFillBtn">記事設定を自動入力</button>
         </div>
 
         <p class="hint">
@@ -1192,7 +1195,7 @@ ${nextChapterHtml}
         file: meta.file
       };
 
-      return JSON.stringify([item], null, 2);
+      return JSON.stringify(item, null, 2);
     }
 
     function formatHeroTitle(title) {
