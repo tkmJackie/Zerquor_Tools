@@ -14,5 +14,5 @@ window.TOOLS_CONFIG = [
   }
   {
    title: "[お知らせ]Markdown → HTML変換ツール"
-   url: "md-to-information-converter.html"
+   url: "./md-to-information-converter.html"
 ];
