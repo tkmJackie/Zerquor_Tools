@@ -10,6 +10,6 @@ window.TOOLS_CONFIG = [
   },
   {
     title: "Markdown → HTML変換ツール",
-    url: "./md-html-converter.html"
+    url: "./md-to-blog-converter.html"
   }
 ];
