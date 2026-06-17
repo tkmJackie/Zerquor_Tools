@@ -143,6 +143,20 @@
       font-size: 13px;
     }
 
+    .preset-box {
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f9fafb;
+    }
+
+    .preset-title {
+      margin: 0 0 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
     /* =========================
        Preview
     ========================= */
@@ -217,7 +231,7 @@
   <main class="app">
     <h1 class="page-title">画像サイズ調整ツール</h1>
     <p class="page-lead">
-      画像をアップロードして、px単位・％単位でサイズを調整できます。黒枠の追加やHTMLタグの自動生成もできます。
+      画像をアップロードして、px単位・％単位でサイズを調整できます。プリセットは横530px × 縦740pxです。
     </p>
 
     <div class="layout">
@@ -251,7 +265,7 @@
         </div>
 
         <div class="check-row">
-          <input type="checkbox" id="keepRatio" checked />
+          <input type="checkbox" id="keepRatio" />
           <label for="keepRatio">アスペクト比を固定する</label>
         </div>
 
@@ -260,16 +274,28 @@
           <label for="borderCheck">黒枠をつける</label>
         </div>
 
+        <div class="preset-box">
+          <p class="preset-title">プリセット</p>
+          <div class="button-row">
+            <button type="button" id="presetButton" class="secondary">
+              横530 × 縦740
+            </button>
+            <button type="button" id="swapButton" class="secondary">
+              縦横を入れ替え
+            </button>
+          </div>
+        </div>
+
         <div id="pxControls">
           <div class="row">
             <div class="field">
-              <label for="widthInput">幅 px</label>
-              <input type="number" id="widthInput" min="1" step="1" />
+              <label for="widthInput">横幅 px</label>
+              <input type="number" id="widthInput" min="1" step="1" value="530" />
             </div>
 
             <div class="field">
-              <label for="heightInput">高さ px</label>
-              <input type="number" id="heightInput" min="1" step="1" />
+              <label for="heightInput">縦幅 px</label>
+              <input type="number" id="heightInput" min="1" step="1" value="740" />
             </div>
           </div>
         </div>
@@ -332,6 +358,9 @@
        Image Resize App
     ========================= */
 
+    const PRESET_WIDTH = 530;
+    const PRESET_HEIGHT = 740;
+
     const imageInput = document.getElementById("imageInput");
     const srcInput = document.getElementById("srcInput");
     const altInput = document.getElementById("altInput");
@@ -345,6 +374,9 @@
     const widthInput = document.getElementById("widthInput");
     const heightInput = document.getElementById("heightInput");
     const percentInput = document.getElementById("percentInput");
+
+    const presetButton = document.getElementById("presetButton");
+    const swapButton = document.getElementById("swapButton");
 
     const previewImage = document.getElementById("previewImage");
     const emptyMessage = document.getElementById("emptyMessage");
@@ -363,8 +395,8 @@
     let originalWidth = 0;
     let originalHeight = 0;
     let imageDataUrl = "";
-    let currentWidth = 0;
-    let currentHeight = 0;
+    let currentWidth = PRESET_WIDTH;
+    let currentHeight = PRESET_HEIGHT;
     let lastChanged = "width";
 
     imageInput.addEventListener("change", handleImageUpload);
@@ -386,6 +418,9 @@
 
     percentInput.addEventListener("input", handlePercentInput);
 
+    presetButton.addEventListener("click", applyPresetSize);
+    swapButton.addEventListener("click", swapSize);
+
     resetButton.addEventListener("click", resetSize);
     downloadButton.addEventListener("click", downloadResizedImage);
     copyButton.addEventListener("click", copyHtml);
@@ -405,12 +440,13 @@
           originalWidth = previewImage.naturalWidth;
           originalHeight = previewImage.naturalHeight;
 
-          currentWidth = originalWidth;
-          currentHeight = originalHeight;
+          currentWidth = Number(widthInput.value) || PRESET_WIDTH;
+          currentHeight = Number(heightInput.value) || PRESET_HEIGHT;
 
-          widthInput.value = originalWidth;
-          heightInput.value = originalHeight;
-          percentInput.value = 100;
+          widthInput.value = currentWidth;
+          heightInput.value = currentHeight;
+
+          updatePercentFromCurrentSize();
 
           if (!srcInput.value.trim()) {
             srcInput.value = "images/" + file.name;
@@ -443,29 +479,27 @@
     }
 
     function handlePxInput() {
-      if (!hasImage()) return;
+      const width = Math.max(1, Number(widthInput.value) || 1);
+      const height = Math.max(1, Number(heightInput.value) || 1);
 
-      let width = Number(widthInput.value);
-      let height = Number(heightInput.value);
-
-      if (keepRatio.checked) {
-        if (lastChanged === "width" && width > 0) {
-          height = Math.round(width * originalHeight / originalWidth);
-          heightInput.value = height;
+      if (hasImage() && keepRatio.checked) {
+        if (lastChanged === "width") {
+          currentWidth = width;
+          currentHeight = Math.round(width * originalHeight / originalWidth);
+          heightInput.value = currentHeight;
         }
 
-        if (lastChanged === "height" && height > 0) {
-          width = Math.round(height * originalWidth / originalHeight);
-          widthInput.value = width;
+        if (lastChanged === "height") {
+          currentHeight = height;
+          currentWidth = Math.round(height * originalWidth / originalHeight);
+          widthInput.value = currentWidth;
         }
+      } else {
+        currentWidth = width;
+        currentHeight = height;
       }
 
-      currentWidth = Math.max(1, width);
-      currentHeight = Math.max(1, height);
-
-      const percent = Math.round((currentWidth / originalWidth) * 100);
-      percentInput.value = percent;
-
+      updatePercentFromCurrentSize();
       updateAll();
     }
 
@@ -483,9 +517,37 @@
       updateAll();
     }
 
+    function applyPresetSize() {
+      modeSelect.value = "px";
+      handleModeChange();
+
+      currentWidth = PRESET_WIDTH;
+      currentHeight = PRESET_HEIGHT;
+
+      widthInput.value = PRESET_WIDTH;
+      heightInput.value = PRESET_HEIGHT;
+
+      updatePercentFromCurrentSize();
+      updateAll();
+    }
+
+    function swapSize() {
+      const width = Math.max(1, Number(widthInput.value) || PRESET_WIDTH);
+      const height = Math.max(1, Number(heightInput.value) || PRESET_HEIGHT);
+
+      currentWidth = height;
+      currentHeight = width;
+
+      widthInput.value = currentWidth;
+      heightInput.value = currentHeight;
+
+      updatePercentFromCurrentSize();
+      updateAll();
+    }
+
     function updateAll() {
       if (!hasImage()) {
-        htmlOutput.value = "";
+        generateHtmlWithoutPreview();
         return;
       }
 
@@ -498,8 +560,8 @@
         widthInput.value = currentWidth;
         heightInput.value = currentHeight;
       } else {
-        currentWidth = Math.max(1, Number(widthInput.value) || originalWidth);
-        currentHeight = Math.max(1, Number(heightInput.value) || originalHeight);
+        currentWidth = Math.max(1, Number(widthInput.value) || PRESET_WIDTH);
+        currentHeight = Math.max(1, Number(heightInput.value) || PRESET_HEIGHT);
       }
 
       previewImage.style.width = currentWidth + "px";
@@ -516,6 +578,13 @@
     }
 
     function updateInfo() {
+      if (!hasImage()) {
+        originalSize.textContent = "-";
+        currentSize.textContent = currentWidth + " × " + currentHeight + " px";
+        scaleSize.textContent = "-";
+        return;
+      }
+
       const percent = Math.round((currentWidth / originalWidth) * 100);
 
       originalSize.textContent = originalWidth + " × " + originalHeight + " px";
@@ -554,17 +623,45 @@
       htmlOutput.value = html;
     }
 
+    function generateHtmlWithoutPreview() {
+      const src = escapeHtml(srcInput.value.trim() || "images/sample.png");
+      const alt = escapeHtml(altInput.value.trim());
+
+      currentWidth = Math.max(1, Number(widthInput.value) || PRESET_WIDTH);
+      currentHeight = Math.max(1, Number(heightInput.value) || PRESET_HEIGHT);
+
+      const borderStyle = borderCheck.checked ? ` style="border: 2px solid #000;"` : "";
+
+      htmlOutput.value =
+        `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}"${borderStyle}>`;
+
+      updateInfo();
+    }
+
     function resetSize() {
-      if (!hasImage()) return;
+      if (!hasImage()) {
+        applyPresetSize();
+        return;
+      }
 
       currentWidth = originalWidth;
       currentHeight = originalHeight;
 
       widthInput.value = originalWidth;
       heightInput.value = originalHeight;
-      percentInput.value = 100;
 
+      updatePercentFromCurrentSize();
       updateAll();
+    }
+
+    function updatePercentFromCurrentSize() {
+      if (!hasImage()) {
+        percentInput.value = 100;
+        return;
+      }
+
+      const percent = Math.round((currentWidth / originalWidth) * 100);
+      percentInput.value = Math.max(1, percent);
     }
 
     function downloadResizedImage() {
@@ -625,18 +722,20 @@
       imageInput.value = "";
       srcInput.value = "";
       altInput.value = "";
-      widthInput.value = "";
-      heightInput.value = "";
-      percentInput.value = 100;
-      htmlOutput.value = "";
 
-      keepRatio.checked = true;
+      widthInput.value = PRESET_WIDTH;
+      heightInput.value = PRESET_HEIGHT;
+      percentInput.value = 100;
+
+      keepRatio.checked = false;
       borderCheck.checked = false;
+      modeSelect.value = "px";
+      handleModeChange();
 
       originalWidth = 0;
       originalHeight = 0;
-      currentWidth = 0;
-      currentHeight = 0;
+      currentWidth = PRESET_WIDTH;
+      currentHeight = PRESET_HEIGHT;
       imageDataUrl = "";
 
       previewImage.src = "";
@@ -648,8 +747,10 @@
       emptyMessage.classList.remove("hidden");
 
       originalSize.textContent = "-";
-      currentSize.textContent = "-";
+      currentSize.textContent = PRESET_WIDTH + " × " + PRESET_HEIGHT + " px";
       scaleSize.textContent = "-";
+
+      generateHtmlWithoutPreview();
     }
 
     function hasImage() {
@@ -663,6 +764,8 @@
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;");
     }
+
+    generateHtmlWithoutPreview();
   </script>
 </body>
 </html>
