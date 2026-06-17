@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Markdown to Zerquor Information Converter</title>
+
+  <!-- Markdown変換 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- HTMLサニタイズ -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    header {
+      background: #111827;
+      color: #ffffff;
+      padding: 24px;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 0;
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 24px auto 48px;
+    }
+
+    .stack {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .panel h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .panel-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-right: 8px;
+      border-radius: 999px;
+      background: #111827;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 4px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      font-family: inherit;
+      background: #ffffff;
+    }
+
+    textarea {
+      min-height: 420px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .small-textarea {
+      min-height: 90px;
+      font-family: inherit;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      min-height: 260px;
+      max-height: 520px;
+      overflow: auto;
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #b91c1c;
+      color: #ffffff;
+    }
+
+    button.secondary {
+      background: #374151;
+    }
+
+    button.light {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .hint {
+      margin-top: 8px;
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    iframe {
+      width: 100%;
+      height: 520px;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      background: #ffffff;
+    }
+
+    @media (max-width: 780px) {
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Markdown to Zerquor Information Converter</h1>
+    <p>Markdownから、Zerquorのお知らせ用HTMLとinformation.json用JSONを同時生成します。</p>
+  </header>
+
+  <main>
+    <div class="stack">
+
+      <!-- 1. Markdown入力 -->
+      <section class="panel">
+        <h2><span class="panel-number">1</span>Markdown入力</h2>
+
+        <textarea id="mdInput" placeholder="# 会社設立予定のお知らせ"></textarea>
+
+        <div class="buttons">
+          <button id="convertBtn">変換する</button>
+          <button id="sampleBtn" class="light">サンプルを入れる</button>
+          <button id="clearBtn" class="light">クリア</button>
+        </div>
+
+        <p class="hint">
+          Markdownを貼り付けると、お知らせタイトル・説明文・概要文・ファイル名などを自動入力します。
+          H1はページタイトル、H2は本文セクションとして変換されます。
+        </p>
+      </section>
+
+      <!-- 2. HTML出力 -->
+      <section class="panel">
+        <h2><span class="panel-number">2</span>HTML出力</h2>
+
+        <pre><code id="htmlOutput"></code></pre>
+
+        <div class="buttons">
+          <button id="copyHtmlBtn" class="secondary">HTMLをコピー</button>
+          <button id="downloadHtmlBtn" class="secondary">HTMLファイル保存</button>
+        </div>
+      </section>
+
+      <!-- 3. お知らせ設定 -->
+      <section class="panel">
+        <h2><span class="panel-number">3</span>お知らせ設定</h2>
+
+        <div class="settings-grid">
+
+          <div class="form-group">
+            <label for="informationId">id</label>
+            <input id="informationId" value="information100001">
+          </div>
+
+          <div class="form-group">
+            <label for="informationFile">file</label>
+            <input id="informationFile" value="information100001.html">
+          </div>
+
+          <div class="form-group full">
+            <label for="informationTitle">title</label>
+            <input id="informationTitle" value="">
+          </div>
+
+          <div class="form-group full">
+            <label for="informationDescription">description</label>
+            <textarea id="informationDescription" class="small-textarea"></textarea>
+          </div>
+
+          <div class="form-group full">
+            <label for="informationOgDescription">OGP用の短い説明</label>
+            <input id="informationOgDescription" value="">
+          </div>
+
+          <div class="form-group full">
+            <label for="informationHeroLead">お知らせ上部の概要文</label>
+            <textarea id="informationHeroLead" class="small-textarea"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="informationCategory">category</label>
+            <input id="informationCategory" value="お知らせ">
+          </div>
+
+          <div class="form-group">
+            <label for="informationDate">date</label>
+            <input id="informationDate" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="assetVersion">CSS / JS バージョン</label>
+            <input id="assetVersion" value="20260617-1">
+          </div>
+
+          <div class="form-group full">
+            <label for="ogImage">og:image</label>
+            <input id="ogImage" value="https://www.zerquor.com/images/logo.png">
+          </div>
+
+          <div class="form-group full">
+            <label for="breadcrumbTitle">パンくず用タイトル</label>
+            <input id="breadcrumbTitle" value="">
+          </div>
+
+        </div>
+
+        <div class="buttons">
+          <button id="autoFillBtn">お知らせ設定を自動入力</button>
+        </div>
+
+        <p class="hint">
+          自動入力された内容は、必要に応じて手動で修正できます。
+          修正後に「変換する」を押すと、HTMLとJSONに反映されます。
+        </p>
+      </section>
+
+      <!-- 4. JSON出力 -->
+      <section class="panel">
+        <h2><span class="panel-number">4</span>JSON出力</h2>
+
+        <pre><code id="jsonOutput"></code></pre>
+
+        <div class="buttons">
+          <button id="copyJsonBtn" class="secondary">JSONをコピー</button>
+          <button id="downloadJsonBtn" class="secondary">JSONファイル保存</button>
+        </div>
+
+        <p class="hint">
+          information.json へ追加しやすいように、配列なしの1件分JSONを出力します。
+        </p>
+      </section>
+
+      <!-- 5. プレビュー -->
+      <section class="panel">
+        <h2>プレビュー</h2>
+        <iframe id="previewFrame"></iframe>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    const fields = {
+      informationId: document.getElementById("informationId"),
+      informationTitle: document.getElementById("informationTitle"),
+      informationDescription: document.getElementById("informationDescription"),
+      informationOgDescription: document.getElementById("informationOgDescription"),
+      informationHeroLead: document.getElementById("informationHeroLead"),
+      informationCategory: document.getElementById("informationCategory"),
+      informationDate: document.getElementById("informationDate"),
+      informationFile: document.getElementById("informationFile"),
+      ogImage: document.getElementById("ogImage"),
+      breadcrumbTitle: document.getElementById("breadcrumbTitle"),
+      assetVersion: document.getElementById("assetVersion")
+    };
+
+    const mdInput = document.getElementById("mdInput");
+    const htmlOutput = document.getElementById("htmlOutput");
+    const jsonOutput = document.getElementById("jsonOutput");
+    const previewFrame = document.getElementById("previewFrame");
+
+    document.getElementById("autoFillBtn").addEventListener("click", () => {
+      autoFillInformationSettings(true);
+      convert();
+    });
+
+    document.getElementById("convertBtn").addEventListener("click", convert);
+    document.getElementById("sampleBtn").addEventListener("click", insertSample);
+    document.getElementById("clearBtn").addEventListener("click", clearAll);
+
+    document.getElementById("copyHtmlBtn").addEventListener("click", () => {
+      copyText(htmlOutput.textContent, "HTMLをコピーしました。");
+    });
+
+    document.getElementById("copyJsonBtn").addEventListener("click", () => {
+      copyText(jsonOutput.textContent, "JSONをコピーしました。");
+    });
+
+    document.getElementById("downloadHtmlBtn").addEventListener("click", downloadHtml);
+    document.getElementById("downloadJsonBtn").addEventListener("click", downloadJson);
+
+    let autoFillTimer = null;
+
+    mdInput.addEventListener("input", () => {
+      clearTimeout(autoFillTimer);
+
+      autoFillTimer = setTimeout(() => {
+        autoFillInformationSettings(true);
+        convert();
+      }, 500);
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      fields.informationDate.value = getTodayDate();
+    });
+
+    function insertSample() {
+      mdInput.value = `# 会社設立予定のお知らせ
+
+## 会社設立予定について
+
+平素よりZerquorの活動にご関心をお寄せいただき、誠にありがとうございます。
+
+このたび、2027年4月1日に会社設立を予定していることをお知らせいたします。
+
+現在、個人としてセキュリティ教育、情報セキュリティに関する支援、学習コンテンツの発信、セミナー活動などに取り組んでおります。今後は、これまでの活動をより継続的かつ体系的に提供していくため、法人としての体制づくりを進めてまいります。
+
+会社設立を通じて、個人での活動にとどまらず、より多くの企業や組織に対して、実務に役立つセキュリティ支援を届けられるよう準備を進めております。
+
+## 設立後に取り組む主な内容
+
+設立予定の会社では、主に中小企業や個人事業主の皆さまを対象に、情報セキュリティをより身近に、わかりやすく学べるサービスの提供を目指しています。
+
+近年、フィッシング詐欺、パスワード管理の不備、情報漏えい、マルウェア感染、不正アクセスなど、企業規模に関係なくセキュリティリスクが高まっています。
+
+一方で、中小企業では「何から始めればよいかわからない」「専門用語が難しい」「専任担当者を置く余裕がない」「社員教育まで手が回らない」といった課題を抱えているケースも少なくありません。
+
+そのような課題に対し、Zerquorでは、実務に役立つセキュリティ教育、従業員向け研修、セキュリティリテラシー向上支援、内製化に向けた伴走支援などを通じて、無理なく継続できるセキュリティ対策を支援してまいります。
+
+- 中小企業向けのセキュリティ教育
+- 従業員向けセキュリティ研修
+- 情報セキュリティに関する学習コンテンツの提供
+- セキュリティリテラシー向上支援
+- セキュリティ対策の内製化支援
+- セミナーやブログを通じた情報発信
+
+## 今後について
+
+会社設立後は、現在準備している各種サービスやコンテンツを順次公開し、より多くの方に安心してご利用いただける体制を整えてまいります。
+
+また、セミナーやブログを通じた情報発信も継続し、セキュリティに不安を感じる方や、何から始めればよいか悩んでいる企業が、最初の一歩を踏み出せる場所を目指してまいります。
+
+なお、会社設立日は現時点での予定であり、今後の準備状況により変更となる場合がございます。正式な設立日、会社概要、提供サービスの詳細につきましては、決まり次第あらためてお知らせいたします。
+
+今後ともどうぞよろしくお願いいたします。`;
+
+      autoFillInformationSettings(true);
+      convert();
+    }
+
+    function clearAll() {
+      mdInput.value = "";
+      htmlOutput.textContent = "";
+      jsonOutput.textContent = "";
+      previewFrame.srcdoc = "";
+
+      fields.informationId.value = "information100001";
+      fields.informationTitle.value = "";
+      fields.informationDescription.value = "";
+      fields.informationOgDescription.value = "";
+      fields.informationHeroLead.value = "";
+      fields.informationCategory.value = "お知らせ";
+      fields.informationDate.value = getTodayDate();
+      fields.informationFile.value = "information100001.html";
+      fields.ogImage.value = "https://www.zerquor.com/images/logo.png";
+      fields.breadcrumbTitle.value = "";
+      fields.assetVersion.value = "20260617-1";
+    }
+
+    function convert() {
+      const markdown = mdInput.value.trim();
+
+      if (!markdown) {
+        return;
+      }
+
+      const parsedMarkdown = parseMarkdown(markdown);
+      const meta = getMeta();
+
+      if (!meta.title) {
+        alert("タイトルが空です。Markdownの先頭に # タイトル を入れるか、お知らせ設定のtitleを入力してください。");
+        return;
+      }
+
+      const bodyHtml = convertMarkdownBodyToArticleSections(parsedMarkdown.body);
+      const pageHtml = buildPageHtml(meta, bodyHtml);
+      const json = buildJson(meta);
+
+      htmlOutput.textContent = pageHtml;
+      jsonOutput.textContent = json;
+      previewFrame.srcdoc = pageHtml;
+    }
+
+    function getMeta() {
+      return {
+        id: fields.informationId.value.trim() || "information100001",
+        title: fields.informationTitle.value.trim(),
+        description: fields.informationDescription.value.trim(),
+        ogDescription: fields.informationOgDescription.value.trim(),
+        heroLead: fields.informationHeroLead.value.trim(),
+        category: fields.informationCategory.value.trim() || "お知らせ",
+        date: fields.informationDate.value.trim() || getTodayDate(),
+        file: fields.informationFile.value.trim() || "information100001.html",
+        ogImage: fields.ogImage.value.trim() || "https://www.zerquor.com/images/logo.png",
+        breadcrumbTitle: fields.breadcrumbTitle.value.trim(),
+        assetVersion: fields.assetVersion.value.trim() || "20260617-1"
+      };
+    }
+
+    function autoFillInformationSettings(overwrite) {
+      const markdown = mdInput.value.trim();
+
+      if (!markdown) return;
+
+      const parsed = parseMarkdown(markdown);
+      const title = parsed.title || extractTitleFromMarkdown(markdown);
+
+      if (!title) return;
+
+      const plainText = markdownToPlainText(parsed.body);
+      const description = createDescription(title, plainText);
+      const shortDescription = createShortDescription(description);
+      const heroLead = createHeroLead(description);
+      const breadcrumbTitle = createBreadcrumbTitle(title);
+
+      const id = fields.informationId.value.trim() || "information100001";
+      const file = createInformationFileName(id);
+
+      setFieldValue(fields.informationTitle, title, overwrite);
+      setFieldValue(fields.informationDescription, description, overwrite);
+      setFieldValue(fields.informationOgDescription, shortDescription, overwrite);
+      setFieldValue(fields.informationHeroLead, heroLead, overwrite);
+      setFieldValue(fields.informationCategory, "お知らせ", overwrite);
+      setFieldValue(fields.breadcrumbTitle, breadcrumbTitle, overwrite);
+      setFieldValue(fields.informationFile, file, overwrite);
+
+      if (!fields.informationDate.value) {
+        fields.informationDate.value = getTodayDate();
+      }
+
+      if (!fields.informationId.value.trim()) {
+        fields.informationId.value = "information100001";
+      }
+    }
+
+    function setFieldValue(field, value, overwrite) {
+      if (!value) return;
+
+      if (overwrite || !field.value.trim()) {
+        field.value = value;
+      }
+    }
+
+    function parseMarkdown(markdown) {
+      let body = markdown.trim();
+      let title = "";
+
+      const firstH1 = body.match(/^#\s+(.+)$/m);
+
+      if (firstH1) {
+        title = firstH1[1].trim();
+        body = body.replace(firstH1[0], "").trim();
+      }
+
+      return {
+        title,
+        body
+      };
+    }
+
+    function extractTitleFromMarkdown(markdown) {
+      const match = markdown.match(/^#\s+(.+)$/m);
+      return match ? match[1].trim() : "";
+    }
+
+    function markdownToPlainText(markdown) {
+      return markdown
+        .replace(/^---[\s\S]*?---/m, "")
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/^[-*+]\s+/gm, "")
+        .replace(/^\d+\.\s+/gm, "")
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/`(.*?)`/g, "$1")
+        .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+        .replace(/^---$/gm, "")
+        .replace(/\n{2,}/g, "\n")
+        .trim();
+    }
+
+    function createDescription(title, plainText) {
+      const cleanTitle = title.trim();
+
+      if (cleanTitle.includes("会社設立")) {
+        return "2027年4月1日に会社設立を予定している旨をお知らせいたします。Zerquorは、セキュリティ教育や情報セキュリティ支援を通じて、中小企業の安全な事業運営を支援してまいります。";
+      }
+
+      if (cleanTitle.includes("セミナー")) {
+        return `${cleanTitle}についてのお知らせです。開催内容や今後の取り組みについてご案内いたします。`;
+      }
+
+      if (cleanTitle.includes("サービス")) {
+        return `${cleanTitle}についてのお知らせです。Zerquorが提供するサービス内容や変更点についてご案内いたします。`;
+      }
+
+      const text = plainText
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join(" ");
+
+      const shortText = truncateText(text, 105);
+
+      return `${cleanTitle}についてのお知らせです。${shortText}`;
+    }
+
+    function createShortDescription(description) {
+      return truncateText(description, 70);
+    }
+
+    function createHeroLead(description) {
+      return truncateText(description, 95);
+    }
+
+    function createBreadcrumbTitle(title) {
+      if (title.length <= 32) {
+        return title;
+      }
+
+      return truncateText(title, 32);
+    }
+
+    function createInformationFileName(id) {
+      return `${id}.html`;
+    }
+
+    function convertMarkdownBodyToArticleSections(markdown) {
+      marked.setOptions({
+        gfm: true,
+        breaks: true
+      });
+
+      const tokens = marked.lexer(markdown);
+      let html = "";
+      let buffer = [];
+      let sectionOpen = false;
+
+      function openSectionWithH2(text) {
+        if (sectionOpen) {
+          flushBuffer();
+          html += `\n          </section>\n\n`;
+        }
+
+        html += `          <section>\n`;
+        html += `            <h2>${escapeHtml(text)}</h2>\n`;
+
+        sectionOpen = true;
+      }
+
+      function openSectionIfNeeded() {
+        if (!sectionOpen) {
+          html += `          <section>\n`;
+          sectionOpen = true;
+        }
+      }
+
+      function flushBuffer() {
+        if (!buffer.length) return;
+
+        const rendered = marked.parser(buffer).trim();
+
+        if (rendered) {
+          html += indentHtml(rendered, 12) + "\n";
+        }
+
+        buffer = [];
+      }
+
+      tokens.forEach(token => {
+        if (token.type === "space") {
+          return;
+        }
+
+        if (token.type === "hr") {
+          return;
+        }
+
+        if (token.type === "heading" && token.depth === 2) {
+          openSectionWithH2(token.text);
+          return;
+        }
+
+        openSectionIfNeeded();
+        buffer.push(token);
+      });
+
+      flushBuffer();
+
+      if (sectionOpen) {
+        html += `\n          </section>`;
+      }
+
+      return DOMPurify.sanitize(html, {
+        USE_PROFILES: {
+          html: true
+        }
+      });
+    }
+
+    function buildPageHtml(meta, bodyHtml) {
+      const title = escapeHtml(meta.title);
+      const description = escapeHtml(meta.description);
+      const ogDescription = escapeHtml(meta.ogDescription || meta.description);
+      const heroLead = escapeHtml(meta.heroLead || meta.description);
+      const category = escapeHtml(meta.category);
+      const date = escapeHtml(formatDate(meta.date));
+      const rawDate = escapeHtml(meta.date);
+      const file = escapeHtml(meta.file);
+      const id = escapeHtml(meta.id);
+      const canonical = `https://www.zerquor.com/${file}`;
+      const ogImage = escapeHtml(meta.ogImage);
+      const breadcrumbTitle = escapeHtml(meta.breadcrumbTitle || meta.title);
+      const assetVersion = escapeHtml(meta.assetVersion || "20260617-1");
+
+      return `<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DHX5DH3R9P"><\/script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-DHX5DH3R9P");
+  <\/script>
+
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "x57jrclrq8");
+  <\/script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>${title} | Zerquor</title>
+
+  <meta
+    name="description"
+    content="${description}"
+  >
+
+  <link
+    rel="canonical"
+    href="${canonical}"
+  >
+
+  <!-- OGP -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${ogDescription}">
+  <meta property="og:image" content="${ogImage}">
+  <meta property="og:url" content="${canonical}">
+
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="styles.css?v=${assetVersion}">
+
+  <!-- Favicon -->
+  <link rel="icon" href="images/logo.png">
+</head>
+
+<body>
+
+  <div id="header"></div>
+
+  <main>
+
+    <section class="blog-article-hero">
+      <div class="container">
+
+        <nav class="breadcrumb">
+          <a href="index.html">ホーム</a>
+          <span>›</span>
+          <a href="information.html">お知らせ</a>
+          <span>›</span>
+          <span>${breadcrumbTitle}</span>
+        </nav>
+
+        <div class="blog-meta">
+          <span>${date}</span>
+          <span>${category}</span>
+        </div>
+
+        <h1>
+          ${title}
+        </h1>
+
+        <p>
+          ${heroLead}
+        </p>
+
+      </div>
+    </section>
+
+    <section class="blog-article-section">
+      <div class="container">
+
+        <article
+          id="${id}"
+          class="blog-post"
+          data-information-id="${id}"
+          data-information-date="${rawDate}"
+        >
+
+${bodyHtml}
+
+        </article>
+
+        <section class="next-chapter">
+          <h3>お知らせ一覧</h3>
+
+          <a href="information.html">
+            お知らせ一覧へ戻る
+          </a>
+        </section>
+
+      </div>
+    </section>
+
+    <div id="cta"></div>
+
+  </main>
+
+  <div id="footer"></div>
+
+  <div id="ai-chat-container"></div>
+
+  <!-- JavaScript -->
+  <script src="script.js?v=${assetVersion}"><\/script>
+
+</body>
+</html>`;
+    }
+
+    function buildJson(meta) {
+      const item = {
+        id: meta.id,
+        title: meta.title,
+        description: meta.description,
+        category: meta.category,
+        date: meta.date,
+        file: meta.file
+      };
+
+      return JSON.stringify(item, null, 2);
+    }
+
+    function formatDate(dateText) {
+      if (!dateText) return "";
+
+      const parts = dateText.split("-");
+
+      if (parts.length === 3) {
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      }
+
+      return dateText;
+    }
+
+    function getTodayDate() {
+      const today = new Date();
+
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function truncateText(text, maxLength) {
+      const cleanText = String(text || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (cleanText.length <= maxLength) {
+        return cleanText;
+      }
+
+      return cleanText.slice(0, maxLength) + "。";
+    }
+
+    function indentHtml(html, spaces) {
+      const padding = " ".repeat(spaces);
+
+      return html
+        .split("\n")
+        .map(line => line.trim() ? padding + line : "")
+        .join("\n");
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function copyText(text, message) {
+      if (!text.trim()) {
+        alert("先に変換してください。");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        alert(message);
+      } catch (error) {
+        fallbackCopyText(text);
+        alert(message);
+      }
+    }
+
+    function fallbackCopyText(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+
+    function downloadHtml() {
+      const html = htmlOutput.textContent.trim();
+
+      if (!html) {
+        alert("先に変換してください。");
+        return;
+      }
+
+      const fileName = fields.informationFile.value.trim() || "information100001.html";
+
+      downloadFile(html, fileName, "text/html;charset=utf-8");
+    }
+
+    function downloadJson() {
+      const json = jsonOutput.textContent.trim();
+
+      if (!json) {
+        alert("先に変換してください。");
+        return;
+      }
+
+      downloadFile(json, "information-item.json", "application/json;charset=utf-8");
+    }
+
+    function downloadFile(content, fileName, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+  </script>
+
+</body>
+
+</html>
