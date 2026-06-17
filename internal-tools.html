@@ -27,15 +27,10 @@
       text-decoration: none;
     }
 
-    button,
-    input {
-      font: inherit;
-    }
-
     .page {
-      max-width: 1180px;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 32px 16px 56px;
+      padding: 40px 16px 64px;
     }
 
     /* =========================
@@ -43,12 +38,11 @@
     ========================= */
     .header {
       margin-bottom: 28px;
+      text-align: center;
     }
 
     .badge {
       display: inline-flex;
-      align-items: center;
-      gap: 8px;
       padding: 6px 12px;
       border-radius: 999px;
       background: #e0f2fe;
@@ -60,266 +54,115 @@
 
     h1 {
       margin: 0;
-      font-size: clamp(30px, 5vw, 48px);
+      font-size: clamp(30px, 5vw, 46px);
       line-height: 1.15;
       letter-spacing: 0.02em;
     }
 
     .lead {
-      max-width: 760px;
-      margin: 14px 0 0;
+      margin: 14px auto 0;
+      max-width: 640px;
       color: #6b7280;
-      font-size: 16px;
+      font-size: 15px;
     }
 
     /* =========================
-       Summary
+       Search
     ========================= */
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin: 28px 0;
+    .search-area {
+      margin: 28px 0 22px;
     }
 
-    .summary-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
-    }
-
-    .summary-card strong {
-      display: block;
-      font-size: 26px;
-      line-height: 1.2;
-      margin-bottom: 4px;
-    }
-
-    .summary-card span {
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    /* =========================
-       Controls
-    ========================= */
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 14px;
-      align-items: center;
-      margin-bottom: 22px;
-    }
-
-    .search {
+    .search-input {
       width: 100%;
-      min-height: 46px;
+      min-height: 48px;
       padding: 12px 16px;
       border: 1px solid #d1d5db;
       border-radius: 999px;
       background: #fff;
-      outline: none;
       font-size: 15px;
+      outline: none;
     }
 
-    .search:focus {
+    .search-input:focus {
       border-color: #111827;
       box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.08);
     }
 
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-
-    .filter-button {
-      min-height: 40px;
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      color: #374151;
-      font-weight: 800;
-      cursor: pointer;
-      transition: 0.2s ease;
-    }
-
-    .filter-button:hover,
-    .filter-button.active {
-      background: #111827;
-      border-color: #111827;
-      color: #fff;
-    }
-
     /* =========================
-       Grid
+       Tool Buttons
     ========================= */
-    .grid {
+    .tools-list {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
+      grid-template-columns: 1fr;
+      gap: 14px;
     }
 
-    .tool-card {
+    .tool-button {
       display: flex;
-      flex-direction: column;
-      min-height: 310px;
-      padding: 20px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      min-height: 68px;
+      padding: 18px 22px;
+      border-radius: 18px;
       background: #fff;
       border: 1px solid #e5e7eb;
-      border-radius: 22px;
-      box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+      font-size: 18px;
+      font-weight: 800;
       transition: 0.2s ease;
     }
 
-    .tool-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
-    }
-
-    .tool-card-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .tool-icon {
-      width: 52px;
-      height: 52px;
-      display: grid;
-      place-items: center;
-      border-radius: 16px;
-      background: #f3f4f6;
-      font-size: 26px;
-    }
-
-    .tool-status {
-      align-self: flex-start;
-      padding: 5px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    .tool-status.ready {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .tool-status.soon {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .tool-status.idea {
-      background: #e0f2fe;
-      color: #075985;
+    .tool-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+      border-color: #111827;
     }
 
     .tool-title {
-      margin: 0 0 8px;
-      font-size: 20px;
-      line-height: 1.35;
+      text-align: left;
     }
 
-    .tool-description {
-      margin: 0;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .tool-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      margin-top: 16px;
-    }
-
-    .tool-tag {
-      padding: 4px 9px;
-      border-radius: 999px;
-      background: #f3f4f6;
-      color: #4b5563;
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .tool-footer {
-      margin-top: auto;
-      padding-top: 18px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .tool-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 9px 15px;
+    .tool-arrow {
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
       border-radius: 999px;
       background: #111827;
       color: #fff;
-      font-weight: 900;
-      font-size: 14px;
-      transition: 0.2s ease;
-    }
-
-    .tool-link:hover {
-      opacity: 0.85;
-      transform: translateY(-1px);
-    }
-
-    .tool-link.disabled {
-      background: #e5e7eb;
-      color: #9ca3af;
-      pointer-events: none;
-    }
-
-    .tool-url {
-      color: #9ca3af;
-      font-size: 12px;
-      word-break: break-all;
+      font-size: 18px;
     }
 
     .empty {
       display: none;
-      padding: 28px;
+      margin-top: 20px;
+      padding: 24px;
       text-align: center;
+      color: #6b7280;
       background: #fff;
       border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      color: #6b7280;
+      border-radius: 16px;
     }
 
     /* =========================
-       Config Help
+       Footer Help
     ========================= */
     .help {
       margin-top: 36px;
-      padding: 22px;
+      padding: 20px;
+      border-radius: 18px;
       background: #111827;
       color: #e5e7eb;
-      border-radius: 20px;
-    }
-
-    .help h2 {
-      margin: 0 0 8px;
-      font-size: 18px;
+      font-size: 14px;
     }
 
     .help p {
-      margin: 0 0 12px;
+      margin: 0 0 10px;
       color: #cbd5e1;
-      font-size: 14px;
     }
 
     .help code {
@@ -339,30 +182,15 @@
       font-size: 13px;
     }
 
-    /* =========================
-       Responsive
-    ========================= */
-    @media (max-width: 960px) {
-      .summary {
-        grid-template-columns: 1fr;
-      }
-
-      .controls {
-        grid-template-columns: 1fr;
-      }
-
-      .filters {
-        justify-content: flex-start;
-      }
-
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
     @media (max-width: 640px) {
-      .grid {
-        grid-template-columns: 1fr;
+      .page {
+        padding-top: 28px;
+      }
+
+      .tool-button {
+        min-height: 62px;
+        padding: 16px 18px;
+        font-size: 16px;
       }
     }
   </style>
@@ -371,58 +199,36 @@
 <body>
   <main class="page">
     <header class="header">
-      <div class="badge">Internal Use</div>
+      <div class="badge">Internal Tools</div>
       <h1>Tools 一覧</h1>
       <p class="lead">
-        内部作業で使うWebツールをまとめたページです。
-        ツールの追加・削除・リンク変更は <strong>tools-config.js</strong> だけ編集すれば反映されます。
+        内部で使うツールへのリンク集です。ボタンを押すと各ツールを開けます。
       </p>
     </header>
 
-    <section class="summary" aria-label="ツール概要">
-      <div class="summary-card">
-        <strong id="totalCount">0</strong>
-        <span>登録ツール数</span>
-      </div>
-
-      <div class="summary-card">
-        <strong id="enabledCount">0</strong>
-        <span>利用可能なツール</span>
-      </div>
-
-      <div class="summary-card">
-        <strong id="categoryCount">0</strong>
-        <span>カテゴリ数</span>
-      </div>
-    </section>
-
-    <section class="controls">
+    <section class="search-area">
       <input
         type="search"
         id="searchInput"
-        class="search"
-        placeholder="検索：画像、HTML、ブログ、セミナー、JSON..."
+        class="search-input"
+        placeholder="ツール名で検索"
       />
-
-      <div class="filters" id="filters"></div>
     </section>
 
-    <section class="grid" id="toolGrid" aria-label="ツール一覧"></section>
+    <section class="tools-list" id="toolsList"></section>
 
     <div class="empty" id="emptyMessage">
-      条件に一致するツールがありません。
+      一致するツールがありません。
     </div>
 
     <section class="help">
-      <h2>リンク変更方法</h2>
       <p>
-        ツールのリンクを変える場合は、<code>tools-config.js</code> の <code>url</code> だけ変更してください。
+        ツールを追加・変更する場合は、<code>tools-config.js</code> だけ編集します。
       </p>
 
       <pre><code>{
   title: "画像サイズ調整ツール",
-  url: "./image-resizer.html",
-  enabled: true
+  url: "./image-resizer.html"
 }</code></pre>
     </section>
   </main>
@@ -434,95 +240,30 @@
        Internal Tools Page
     ========================= */
 
-    const tools = Array.isArray(window.TOOLS_CONFIG) ? window.TOOLS_CONFIG : [];
+    const tools = Array.isArray(window.TOOLS_CONFIG)
+      ? window.TOOLS_CONFIG
+      : [];
 
+    const toolsList = document.getElementById("toolsList");
     const searchInput = document.getElementById("searchInput");
-    const filters = document.getElementById("filters");
-    const toolGrid = document.getElementById("toolGrid");
     const emptyMessage = document.getElementById("emptyMessage");
 
-    const totalCount = document.getElementById("totalCount");
-    const enabledCount = document.getElementById("enabledCount");
-    const categoryCount = document.getElementById("categoryCount");
+    renderTools(tools);
 
-    let currentCategory = "すべて";
-
-    init();
-
-    function init() {
-      renderSummary();
-      renderFilters();
-      renderTools(tools);
-
-      searchInput.addEventListener("input", filterTools);
-    }
-
-    function renderSummary() {
-      const categories = getCategories();
-
-      totalCount.textContent = tools.length;
-      enabledCount.textContent = tools.filter(tool => tool.enabled).length;
-      categoryCount.textContent = categories.length;
-    }
-
-    function renderFilters() {
-      const categories = ["すべて", ...getCategories()];
-
-      filters.innerHTML = "";
-
-      categories.forEach(category => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "filter-button";
-
-        if (category === currentCategory) {
-          button.classList.add("active");
-        }
-
-        button.textContent = category;
-
-        button.addEventListener("click", () => {
-          currentCategory = category;
-
-          document.querySelectorAll(".filter-button").forEach(item => {
-            item.classList.remove("active");
-          });
-
-          button.classList.add("active");
-          filterTools();
-        });
-
-        filters.appendChild(button);
-      });
-    }
-
-    function filterTools() {
+    searchInput.addEventListener("input", () => {
       const keyword = searchInput.value.trim().toLowerCase();
 
-      const filtered = tools.filter(tool => {
-        const categoryMatched =
-          currentCategory === "すべて" ||
-          tool.category === currentCategory;
-
-        const searchText = [
-          tool.title,
-          tool.description,
-          tool.category,
-          tool.status,
-          tool.url,
-          ...(tool.tags || [])
-        ].join(" ").toLowerCase();
-
-        const keywordMatched = searchText.includes(keyword);
-
-        return categoryMatched && keywordMatched;
+      const filteredTools = tools.filter(tool => {
+        return String(tool.title || "")
+          .toLowerCase()
+          .includes(keyword);
       });
 
-      renderTools(filtered);
-    }
+      renderTools(filteredTools);
+    });
 
     function renderTools(toolList) {
-      toolGrid.innerHTML = "";
+      toolsList.innerHTML = "";
 
       if (toolList.length === 0) {
         emptyMessage.style.display = "block";
@@ -532,80 +273,25 @@
       emptyMessage.style.display = "none";
 
       toolList.forEach(tool => {
-        const card = document.createElement("article");
-        card.className = "tool-card";
-
-        const top = document.createElement("div");
-        top.className = "tool-card-top";
-
-        const icon = document.createElement("div");
-        icon.className = "tool-icon";
-        icon.textContent = tool.icon || "🛠️";
-
-        const status = document.createElement("div");
-        status.className = `tool-status ${tool.statusType || "idea"}`;
-        status.textContent = tool.status || "未設定";
-
-        top.appendChild(icon);
-        top.appendChild(status);
-
-        const title = document.createElement("h2");
-        title.className = "tool-title";
-        title.textContent = tool.title || "無題のツール";
-
-        const description = document.createElement("p");
-        description.className = "tool-description";
-        description.textContent = tool.description || "";
-
-        const tags = document.createElement("div");
-        tags.className = "tool-tags";
-
-        (tool.tags || []).forEach(tagText => {
-          const tag = document.createElement("span");
-          tag.className = "tool-tag";
-          tag.textContent = tagText;
-          tags.appendChild(tag);
-        });
-
-        const footer = document.createElement("div");
-        footer.className = "tool-footer";
-
         const link = document.createElement("a");
-        link.className = "tool-link";
+        link.className = "tool-button";
+        link.href = tool.url || "#";
 
-        if (tool.enabled) {
-          link.href = tool.url || "#";
-          link.textContent = "開く";
-        } else {
-          link.href = "#";
-          link.textContent = "準備中";
-          link.classList.add("disabled");
-          link.setAttribute("aria-disabled", "true");
-        }
+        link.innerHTML = `
+          <span class="tool-title">${escapeHtml(tool.title)}</span>
+          <span class="tool-arrow">→</span>
+        `;
 
-        const url = document.createElement("span");
-        url.className = "tool-url";
-        url.textContent = tool.url || "";
-
-        footer.appendChild(link);
-        footer.appendChild(url);
-
-        card.appendChild(top);
-        card.appendChild(title);
-        card.appendChild(description);
-        card.appendChild(tags);
-        card.appendChild(footer);
-
-        toolGrid.appendChild(card);
+        toolsList.appendChild(link);
       });
     }
 
-    function getCategories() {
-      return [...new Set(
-        tools
-          .map(tool => tool.category)
-          .filter(Boolean)
-      )];
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
     }
   </script>
 </body>
