@@ -11,13 +11,5 @@ window.TOOLS_CONFIG = [
   {
     title: "Markdown → HTML変換ツール",
     url: "./md-html-converter.html"
-  },
-  {
-    title: "ブログ記事設定JSON生成ツール",
-    url: "./blog-json-generator.html"
-  },
-  {
-    title: "HTMLタグ生成ツール",
-    url: "./html-tag-generator.html"
   }
 ];
