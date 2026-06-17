@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>画像サイズ調整ツール</title>
 
   <style>
@@ -231,7 +232,8 @@
   <main class="app">
     <h1 class="page-title">画像サイズ調整ツール</h1>
     <p class="page-lead">
-      画像をアップロードして、px単位・％単位でサイズを調整できます。プリセットは横530px × 縦740pxです。
+      画像をアップロードして、px単位・％単位でサイズを調整できます。
+      画像名を指定すると、HTML出力とダウンロード名に反映されます。
     </p>
 
     <div class="layout">
@@ -246,9 +248,11 @@
         </div>
 
         <div class="field">
-          <label for="srcInput">HTML出力用の画像パス</label>
-          <input type="text" id="srcInput" placeholder="例：images/sample.png" />
-          <p class="note">実際のサイトで使う画像パスを入力してください。</p>
+          <label for="srcInput">画像名</label>
+          <input type="text" id="srcInput" placeholder="例：sample.png" />
+          <p class="note">
+            HTML出力のsrc属性と、ダウンロード時のファイル名に使います。
+          </p>
         </div>
 
         <div class="field">
@@ -331,7 +335,7 @@
             元のサイズ
           </div>
           <div class="info-card">
-            <strong id="currentSize">-</strong>
+            <strong id="currentSize">530 × 740 px</strong>
             現在の表示サイズ
           </div>
           <div class="info-card">
@@ -342,7 +346,7 @@
 
         <div class="field" style="margin-top: 20px;">
           <label for="htmlOutput">HTML出力</label>
-          <textarea id="htmlOutput" readonly placeholder="画像を選択するとHTMLが生成されます。"></textarea>
+          <textarea id="htmlOutput" readonly placeholder="HTMLがここに表示されます。"></textarea>
         </div>
 
         <div class="button-row">
@@ -449,7 +453,7 @@
           updatePercentFromCurrentSize();
 
           if (!srcInput.value.trim()) {
-            srcInput.value = "images/" + file.name;
+            srcInput.value = file.name;
           }
 
           emptyMessage.classList.add("hidden");
@@ -593,7 +597,7 @@
     }
 
     function generateHtml() {
-      const src = escapeHtml(srcInput.value.trim() || "images/sample.png");
+      const imageName = escapeHtml(srcInput.value.trim() || "sample.png");
       const alt = escapeHtml(altInput.value.trim());
 
       const borderStyle = borderCheck.checked ? "border: 2px solid #000;" : "";
@@ -603,20 +607,20 @@
       if (modeSelect.value === "px") {
         if (borderCheck.checked) {
           html =
-            `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}" style="${borderStyle}">`;
+            `<img src="${imageName}" alt="${alt}" width="${currentWidth}" height="${currentHeight}" style="${borderStyle}">`;
         } else {
           html =
-            `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}">`;
+            `<img src="${imageName}" alt="${alt}" width="${currentWidth}" height="${currentHeight}">`;
         }
       } else {
         const percent = Math.max(1, Number(percentInput.value) || 1);
 
         if (borderCheck.checked) {
           html =
-            `<img src="${src}" alt="${alt}" style="width: ${percent}%; height: auto; ${borderStyle}">`;
+            `<img src="${imageName}" alt="${alt}" style="width: ${percent}%; height: auto; ${borderStyle}">`;
         } else {
           html =
-            `<img src="${src}" alt="${alt}" style="width: ${percent}%; height: auto;">`;
+            `<img src="${imageName}" alt="${alt}" style="width: ${percent}%; height: auto;">`;
         }
       }
 
@@ -624,7 +628,7 @@
     }
 
     function generateHtmlWithoutPreview() {
-      const src = escapeHtml(srcInput.value.trim() || "images/sample.png");
+      const imageName = escapeHtml(srcInput.value.trim() || "sample.png");
       const alt = escapeHtml(altInput.value.trim());
 
       currentWidth = Math.max(1, Number(widthInput.value) || PRESET_WIDTH);
@@ -633,7 +637,7 @@
       const borderStyle = borderCheck.checked ? ` style="border: 2px solid #000;"` : "";
 
       htmlOutput.value =
-        `<img src="${src}" alt="${alt}" width="${currentWidth}" height="${currentHeight}"${borderStyle}>`;
+        `<img src="${imageName}" alt="${alt}" width="${currentWidth}" height="${currentHeight}"${borderStyle}>`;
 
       updateInfo();
     }
@@ -691,10 +695,43 @@
         currentHeight
       );
 
+      const fileName = getDownloadFileName();
+      const mimeType = getMimeTypeFromFileName(fileName);
+
       const link = document.createElement("a");
-      link.download = "resized-image.png";
-      link.href = canvas.toDataURL("image/png");
+      link.download = fileName;
+      link.href = canvas.toDataURL(mimeType);
       link.click();
+    }
+
+    function getDownloadFileName() {
+      const imageName = srcInput.value.trim();
+
+      if (!imageName) {
+        return "resized-image.png";
+      }
+
+      const hasExtension = /\.[a-zA-Z0-9]+$/.test(imageName);
+
+      if (hasExtension) {
+        return imageName;
+      }
+
+      return imageName + ".png";
+    }
+
+    function getMimeTypeFromFileName(fileName) {
+      const lowerName = fileName.toLowerCase();
+
+      if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) {
+        return "image/jpeg";
+      }
+
+      if (lowerName.endsWith(".webp")) {
+        return "image/webp";
+      }
+
+      return "image/png";
     }
 
     async function copyHtml() {
@@ -758,7 +795,7 @@
     }
 
     function escapeHtml(value) {
-      return value
+      return String(value)
         .replaceAll("&", "&amp;")
         .replaceAll('"', "&quot;")
         .replaceAll("<", "&lt;")
