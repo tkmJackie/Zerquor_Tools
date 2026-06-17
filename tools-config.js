@@ -9,7 +9,10 @@ window.TOOLS_CONFIG = [
     url: "./image-resizer.html"
   },
   {
-    title: "Markdown → HTML変換ツール",
+    title: "[Blog]Markdown → HTML変換ツール",
     url: "./md-to-blog-converter.html"
   }
+  {
+   title: "[お知らせ]Markdown → HTML変換ツール"
+   url: "md-to-information-converter.html"
 ];
